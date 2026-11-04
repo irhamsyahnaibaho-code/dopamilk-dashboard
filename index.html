@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard Tim Dopa | Dopamilku</title>
+<link rel="icon" href="logo-dopamilk.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Raleway:wght@500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
+<style>
+  :root{
+    --blue:#0B34BD; --blue-ink:#0A2A99; --blue-wash:#EAF0FF; --blue-line:#CFD9F7;
+    --yellow:#FAB400; --yellow-wash:#FFF4D1;
+    --paper:#F6F8FF; --ink:#101A45; --muted:#5B6592; --white:#fff;
+    --ok:#17855B; --ok-wash:#E1F5EC; --warn:#8A5800; --warn-wash:#FFF1CC; --bad:#C0352E; --bad-wash:#FDE7E5;
+    --r-card:18px; --r-ctl:10px;
+    --font-head:'Fredoka','Raleway',system-ui,sans-serif;
+    --font-body:'Raleway',system-ui,-apple-system,'Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; min-height:100vh; background:var(--paper); color:var(--ink);
+    font-family:var(--font-body); font-size:15px; line-height:1.5; font-weight:500;
+  }
+  /* bercak sapi di pojok, satu-satunya dekorasi */
+  body::before{
+    content:""; position:fixed; right:-140px; bottom:-160px; width:560px; height:560px; z-index:0; pointer-events:none;
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Cpath fill='%23E6ECFF' d='M70 40C150 -10 260 20 280 100C300 170 230 190 250 250C270 310 190 380 110 340C30 300 60 230 30 180C0 130 10 70 70 40Z'/%3E%3C/svg%3E") no-repeat center/contain;
+  }
+  #app{position:relative; z-index:1; min-height:100vh}
+  h1,h2,h3,h4{font-family:var(--font-head); margin:0; font-weight:600; letter-spacing:.1px}
+  p{margin:0}
+  button{font:inherit; color:inherit}
+  :focus-visible{outline:3px solid var(--blue); outline-offset:2px}
+  .sr-only{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
+
+  /* ---------- tombol ---------- */
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px; cursor:pointer;
+    border:2px solid var(--blue); background:var(--blue); color:#fff; font-weight:700; font-size:14px;
+    padding:9px 18px; border-radius:var(--r-ctl); transition:background .15s, transform .1s;
+  }
+  .btn:hover{background:var(--blue-ink); border-color:var(--blue-ink)}
+  .btn:active{transform:translateY(1px)}
+  .btn[disabled]{opacity:.55; cursor:not-allowed}
+  .btn.ghost{background:#fff; color:var(--blue)}
+  .btn.ghost:hover{background:var(--blue-wash)}
+  .btn.danger{background:#fff; color:var(--bad); border-color:#E9B8B5}
+  .btn.danger:hover{background:var(--bad-wash)}
+  .btn.mini{padding:5px 11px; font-size:12.5px; border-radius:8px}
+
+  /* ---------- chip ---------- */
+  .chip{display:inline-flex; align-items:center; gap:5px; padding:2px 10px; border-radius:999px; font-size:12px; font-weight:700; white-space:nowrap}
+  .w-ringan{background:var(--blue-wash); color:var(--blue-ink)}
+  .w-sedang{background:var(--yellow-wash); color:var(--warn)}
+  .w-berat{background:var(--blue); color:#fff}
+  .load-low{background:var(--ok-wash); color:var(--ok)}
+  .load-mid{background:var(--warn-wash); color:var(--warn)}
+  .load-high{background:var(--bad-wash); color:var(--bad)}
+  .due{background:#EEF1FB; color:var(--muted)}
+  .due.late{background:var(--bad-wash); color:var(--bad)}
+  .due.today{background:var(--warn-wash); color:var(--warn)}
+
+  /* ---------- avatar ---------- */
+  .avatar{
+    display:inline-grid; place-items:center; flex:none; width:42px; height:42px; border-radius:50%;
+    font-family:var(--font-head); font-weight:600; font-size:15px; background:var(--blue); color:#fff;
+  }
+  .avatar.alt{background:var(--yellow); color:var(--ink)}
+  .avatar.lg{width:56px; height:56px; font-size:20px}
+  .avatar.sm{width:30px; height:30px; font-size:12px}
+
+  /* ---------- topbar ---------- */
+  .topbar{
+    position:sticky; top:0; z-index:20; display:flex; align-items:center; gap:20px; flex-wrap:wrap;
+    padding:10px 24px; background:#fff; border-bottom:3px solid var(--yellow);
+  }
+  .brand{display:flex; align-items:center; gap:12px; margin-right:auto}
+  .brand img{height:56px; width:auto; display:block}
+  .brand strong{display:block; font-family:var(--font-head); font-size:19px; color:var(--blue); line-height:1.15; font-weight:600}
+  .brand span{font-size:12.5px; color:var(--muted); font-weight:600}
+  .tabs{display:flex; gap:4px; background:var(--blue-wash); padding:4px; border-radius:999px}
+  .tab{border:0; background:transparent; cursor:pointer; padding:7px 16px; border-radius:999px; font-weight:700; font-size:14px; color:var(--blue-ink)}
+  .tab[aria-current="page"]{background:var(--blue); color:#fff}
+  .me{display:flex; align-items:center; gap:10px}
+  .me-text{line-height:1.2; text-align:right}
+  .me-text b{display:block; font-size:14px}
+  .me-text small{color:var(--muted); font-size:12.5px; font-weight:600}
+
+  /* ---------- konten ---------- */
+  .page{max-width:1240px; margin:0 auto; padding:28px 24px 72px}
+  .page-title{font-size:30px; color:var(--blue); font-weight:700}
+  .page-sub{color:var(--muted); margin-top:4px; font-weight:600}
+  .summary{display:flex; flex-wrap:wrap; gap:8px 20px; margin:18px 0 26px; font-weight:700}
+  .summary span{display:inline-flex; align-items:baseline; gap:6px; color:var(--muted)}
+  .summary b{font-family:var(--font-head); font-size:24px; color:var(--ink); font-weight:600}
+  .summary .late b{color:var(--bad)}
+
+  /* ---------- kartu anggota ---------- */
+  .members{display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:18px}
+  .member{
+    background:#fff; border:2px solid var(--blue-line); border-radius:var(--r-card); padding:18px;
+    cursor:pointer; text-align:left; transition:border-color .15s, box-shadow .15s;
+  }
+  .member:hover{border-color:var(--blue); box-shadow:0 6px 0 var(--blue-wash)}
+  .member.is-me{border-color:var(--yellow)}
+  .member-head{display:flex; align-items:center; gap:12px}
+  .member-head strong{display:block; font-family:var(--font-head); font-size:19px; font-weight:600; line-height:1.2}
+  .member-head small{color:var(--muted); font-weight:600; font-size:13px}
+  .member-body{display:flex; gap:16px; margin-top:16px; align-items:flex-end}
+  .member-info{flex:1; min-width:0; display:flex; flex-direction:column; gap:8px}
+  .counts{display:flex; gap:14px; font-size:13px; color:var(--muted); font-weight:700}
+  .counts b{font-family:var(--font-head); font-size:19px; color:var(--ink); margin-right:3px; font-weight:600}
+  .now{font-size:13px; color:var(--muted); font-weight:600; overflow-wrap:anywhere}
+  .now b{color:var(--ink)}
+  .glass{flex:none; width:56px}
+  .glass svg{display:block; width:100%; height:auto; overflow:visible}
+
+  /* ---------- papan kerja ---------- */
+  .board-head{display:flex; align-items:center; gap:20px; flex-wrap:wrap; margin:6px 0 18px}
+  .who{display:flex; align-items:center; gap:14px; margin-right:auto; min-width:0}
+  .who h2{font-size:26px; color:var(--blue); font-weight:700; line-height:1.15}
+  .who p{color:var(--muted); font-weight:600}
+  .load-box{display:flex; align-items:flex-end; gap:12px}
+  .load-box .glass{width:44px}
+  .load-box small{display:block; color:var(--muted); font-weight:600; font-size:12.5px; margin-top:3px}
+  .switcher{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:18px}
+  .switcher > span{font-weight:700; color:var(--muted); font-size:13.5px; margin-right:4px}
+  .pick{
+    display:inline-flex; align-items:center; gap:8px; padding:4px 14px 4px 4px; border-radius:999px; cursor:pointer;
+    border:2px solid var(--blue-line); background:#fff; font-weight:700; font-size:13.5px;
+  }
+  .pick:hover{border-color:var(--blue)}
+  .pick[aria-pressed="true"]{border-color:var(--blue); background:var(--blue-wash)}
+  .notice{background:var(--yellow-wash); border-radius:12px; padding:10px 14px; margin-bottom:16px; font-weight:600; font-size:14px; color:var(--warn)}
+
+  .board{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; align-items:start}
+  .col{background:rgba(255,255,255,.7); border:2px solid var(--blue-line); border-radius:var(--r-card); padding:14px; min-height:220px}
+  .col.over{border-color:var(--blue); background:var(--blue-wash)}
+  .col-head{display:flex; align-items:center; gap:10px; margin-bottom:12px}
+  .col-head h3{font-size:18px; font-weight:600}
+  .col-head small{color:var(--muted); font-weight:600; font-size:12.5px}
+  .col-count{margin-left:auto; min-width:28px; text-align:center; padding:1px 9px; border-radius:999px; background:#fff; border:2px solid var(--blue-line); font-weight:700; font-size:13px}
+  .mark{width:14px; height:14px; border-radius:50%; flex:none}
+  .mark.todo{border:3px solid #8E9AD0}
+  .mark.doing{background:var(--yellow)}
+  .mark.done{background:var(--blue)}
+  .cards{display:flex; flex-direction:column; gap:10px}
+  .empty{border:2px dashed var(--blue-line); border-radius:14px; padding:18px 12px; text-align:center; color:var(--muted); font-weight:600; font-size:13.5px}
+
+  .task{
+    background:#fff; border:2px solid var(--blue-line); border-radius:14px; padding:12px 14px; cursor:pointer;
+    transition:border-color .15s;
+  }
+  .task:hover{border-color:var(--blue)}
+  .task[draggable="true"]{cursor:grab}
+  .task.dragging{opacity:.45}
+  .task-top{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px}
+  .task h4{font-family:var(--font-body); font-weight:700; font-size:15px; line-height:1.35; overflow-wrap:anywhere}
+  .task.is-done h4{color:var(--muted); text-decoration:line-through; text-decoration-color:var(--blue-line)}
+  .task .note{
+    margin-top:6px; font-size:13px; color:var(--muted); font-weight:600;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere;
+  }
+  .task .note b{color:var(--ink)}
+  .task-actions{display:flex; gap:6px; flex-wrap:wrap; margin-top:10px}
+
+  /* ---------- modal ---------- */
+  .backdrop{position:fixed; inset:0; z-index:50; background:rgba(16,26,69,.5); display:grid; place-items:center; padding:16px; overflow-y:auto}
+  .dialog{
+    width:100%; max-width:540px; background:#fff; border-radius:22px; padding:24px; border-top:6px solid var(--yellow);
+    animation:pop .18s ease-out;
+  }
+  @keyframes pop{from{transform:translateY(8px) scale(.98); opacity:0} to{transform:none; opacity:1}}
+  .dialog h3{font-size:22px; color:var(--blue); margin-bottom:16px; font-weight:700}
+  .field{display:flex; flex-direction:column; gap:5px; margin-bottom:14px}
+  .field label{font-weight:700; font-size:13.5px}
+  .field small{color:var(--muted); font-weight:600; font-size:12.5px}
+  .field input,.field select,.field textarea{
+    font:inherit; font-weight:600; color:var(--ink); background:#fff; width:100%;
+    padding:10px 12px; border:2px solid var(--blue-line); border-radius:var(--r-ctl);
+  }
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none; border-color:var(--blue); box-shadow:0 0 0 3px var(--blue-wash)}
+  .field input:disabled,.field select:disabled,.field textarea:disabled{background:#F2F4FB; color:var(--muted)}
+  .field textarea{resize:vertical; min-height:96px}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  .dialog-actions{display:flex; gap:10px; margin-top:6px; flex-wrap:wrap}
+  .dialog-actions .spacer{margin-right:auto}
+
+  /* ---------- login ---------- */
+  .center{min-height:100vh; display:grid; place-items:center; padding:24px}
+  .login{width:100%; max-width:410px; background:#fff; border:2px solid var(--blue-line); border-top:6px solid var(--yellow); border-radius:24px; padding:28px; text-align:center}
+  .login img{width:150px; height:auto; display:block; margin:0 auto 6px}
+  .login h1{font-size:24px; color:var(--blue); font-weight:700}
+  .login .sub{color:var(--muted); font-weight:600; margin:4px 0 20px}
+  .login .field{text-align:left}
+  .login .btn{width:100%; margin-top:4px}
+  .err{background:var(--bad-wash); color:var(--bad); border-radius:10px; padding:9px 12px; font-weight:700; font-size:13.5px; margin-bottom:14px; text-align:left}
+  .hint{margin-top:16px; color:var(--muted); font-size:13px; font-weight:600}
+  .loading{color:var(--muted); font-weight:700}
+
+  .toast{
+    position:fixed; left:50%; bottom:24px; transform:translateX(-50%); z-index:80; max-width:min(92vw,460px);
+    background:var(--ink); color:#fff; padding:11px 18px; border-radius:12px; font-weight:700; font-size:14px;
+  }
+  .toast.error{background:var(--bad)}
+
+  /* ---------- layar kecil ---------- */
+  @media (max-width:900px){
+    .topbar{padding:10px 16px; gap:12px}
+    .tabs{order:3; width:100%; justify-content:center}
+    .page{padding:20px 16px 64px}
+    .board{display:flex; overflow-x:auto; scroll-snap-type:x mandatory; gap:12px; padding-bottom:10px; -webkit-overflow-scrolling:touch}
+    .col{flex:0 0 84%; scroll-snap-align:start}
+    .me-text{display:none}
+  }
+  @media (max-width:520px){
+    .grid2{grid-template-columns:1fr}
+    .page-title{font-size:25px}
+    .who h2{font-size:22px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none !important; transition:none !important}
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="modal-root"></div>
+<div id="toast-root"></div>
+<noscript>Dashboard ini membutuhkan JavaScript. Aktifkan JavaScript di browser kamu.</noscript>
+
+<script>
+/* =====================================================================
+   PENGATURAN: isi 2 baris pertama dari Supabase
+   (Project Settings > API > Project URL dan anon public key)
+   ===================================================================== */
+const CONFIG = {
+  SUPABASE_URL: 'https://yrueytrwccntexeodjin.supabase.co',
+  SUPABASE_ANON_KEY: 'sb_publishable_KpMduxEIEpJfG3pxqbUzuQ_XZub2pps',
+
+  // Bobot tugas dihitung jadi "poin" untuk mengukur beban kerja
+  WEIGHT_POINTS: { ringan: 1, sedang: 2, berat: 3 },
+  // Batas beban kerja (total poin tugas yang belum Done)
+  LOAD_LEVELS: { longgar: 3, pas: 7 },   // sampai 3 = Longgar, sampai 7 = Pas, di atasnya = Penuh
+  LOAD_FULL_AT: 10                        // gelas dianggap penuh di poin ini
+};
+
+const configured = !CONFIG.SUPABASE_URL.startsWith('PASTE');
+const sb = configured ? supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY) : null;
+
+/* ---------- util ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const STATUSES = [
+  { key: 'todo',  label: 'To Do', hint: 'Antrian tugas' },
+  { key: 'doing', label: 'Doing', hint: 'Sedang dikerjakan' },
+  { key: 'done',  label: 'Done',  hint: 'Sudah selesai' }
+];
+const WEIGHT_LABEL = { ringan: 'Ringan', sedang: 'Sedang', berat: 'Berat' };
+
+const state = { me: null, profiles: [], tasks: [], view: 'overview', selectedId: null };
+let session = null, channel = null, glassSeq = 0;
+
+const todayStr = () => {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+};
+const fmtDate = s => new Date(s + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+const initials = n => (n || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+const firstName = n => (n || '').trim().split(/\s+/)[0] || 'kamu';
+const profileOf = id => state.profiles.find(p => p.id === id);
+const idxOf = id => Math.max(0, state.profiles.findIndex(p => p.id === id));
+const isCeo = () => !!(state.me && state.me.is_ceo);
+const canEdit = ownerId => isCeo() || (state.me && state.me.id === ownerId);
+
+function avatar(p, size = '') {
+  const alt = idxOf(p.id) % 2 === 1 ? ' alt' : '';
+  return `<span class="avatar${alt} ${size}" aria-hidden="true">${esc(initials(p.full_name))}</span>`;
+}
+
+function toast(msg, type = '') {
+  const root = $('#toast-root');
+  root.innerHTML = `<div class="toast ${type}" role="status">${esc(msg)}</div>`;
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => { root.innerHTML = ''; }, 3800);
+}
+
+/* ---------- beban kerja ---------- */
+function workload(uid) {
+  const active = state.tasks.filter(t => t.owner_id === uid && t.status !== 'done');
+  const pts = active.reduce((a, t) => a + (CONFIG.WEIGHT_POINTS[t.weight] || 1), 0);
+  const L = CONFIG.LOAD_LEVELS;
+  const level = pts <= L.longgar ? { k: 'low', label: 'Longgar' } : pts <= L.pas ? { k: 'mid', label: 'Pas' } : { k: 'high', label: 'Penuh' };
+  return { pts, count: active.length, level, pct: Math.min(100, Math.round(pts / CONFIG.LOAD_FULL_AT * 100)) };
+}
+
+/* Gelas susu: makin penuh, makin berat beban kerjanya */
+function glassSvg(wl) {
+  const id = 'g' + (++glassSeq);
+  const top = 6, bottom = 60, h = bottom - top;
+  const fillH = Math.round(h * wl.pct / 100);
+  const fillColor = wl.level.k === 'high' ? 'var(--yellow)' : 'var(--blue)';
+  const shape = 'M6 6H42L38.2 57.6Q38 60 35.4 60H12.6Q10 60 9.8 57.6Z';
+  return `<svg viewBox="0 -10 48 72" role="img" aria-label="Beban kerja ${esc(wl.level.label)}, ${wl.pts} poin">
+    <defs><clipPath id="${id}"><path d="${shape}"/></clipPath></defs>
+    <path d="M27 24L37 -8" stroke="var(--blue)" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+    <path d="${shape}" fill="var(--blue-wash)"/>
+    <g clip-path="url(#${id})"><rect x="0" y="${bottom - fillH}" width="48" height="${fillH + 2}" fill="${fillColor}"/></g>
+    <path d="${shape}" fill="none" stroke="var(--blue)" stroke-width="3" stroke-linejoin="round"/>
+  </svg>`;
+}
+
+/* ---------- data ---------- */
+async function loadTasks() {
+  const t = await sb.from('tasks').select('*').order('created_at');
+  if (t.error) { toast('Gagal memuat tugas: ' + t.error.message, 'error'); return false; }
+  state.tasks = t.data; return true;
+}
+async function loadAll() {
+  const p = await sb.from('profiles').select('*').order('sort_order').order('full_name');
+  if (p.error) { toast('Gagal memuat anggota: ' + p.error.message, 'error'); return; }
+  state.profiles = p.data;
+  state.me = p.data.find(x => x.id === session.user.id) || null;
+  await loadTasks();
+}
+
+function startRealtime() {
+  stopRealtime();
+  let timer;
+  channel = sb.channel('tasks-live')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => {
+      clearTimeout(timer);
+      timer = setTimeout(async () => { if (await loadTasks()) renderMain(); }, 250);
+    })
+    .subscribe();
+}
+function stopRealtime() { if (channel) { sb.removeChannel(channel); channel = null; } }
+
+/* ---------- boot ---------- */
+async function boot() {
+  if (!configured) { renderLogin(); return; }
+  const { data } = await sb.auth.getSession();
+  session = data.session;
+  sb.auth.onAuthStateChange(ev => {
+    if (ev === 'SIGNED_OUT') { session = null; stopRealtime(); renderLogin(); }
+  });
+  if (session) await enterApp(); else renderLogin();
+}
+
+async function enterApp() {
+  $('#app').innerHTML = `<div class="center"><p class="loading">Memuat data tim...</p></div>`;
+  await loadAll();
+  if (!state.me) { renderNoProfile(); return; }
+  state.view = isCeo() ? 'overview' : 'board';
+  state.selectedId = state.me.id;
+  renderApp();
+  startRealtime();
+}
+
+/* ---------- layar: login ---------- */
+function renderLogin(errMsg = '') {
+  closeModal();
+  $('#app').innerHTML = `
+  <div class="center">
+    <div class="login">
+      <img src="logo-dopamilk.png" alt="Logo Dopamilku">
+      <h1>Dashboard Tim Dopa</h1>
+      <p class="sub">Masuk untuk update kerjaanmu.</p>
+      ${!configured ? `<div class="err">Dashboard belum terhubung ke Supabase. Isi SUPABASE_URL dan SUPABASE_ANON_KEY di bagian CONFIG pada index.html.</div>` : ''}
+      ${errMsg ? `<div class="err" role="alert">${esc(errMsg)}</div>` : ''}
+      <form id="login-form">
+        <div class="field"><label for="email">Email</label><input id="email" type="email" autocomplete="username" required></div>
+        <div class="field"><label for="password">Password</label><input id="password" type="password" autocomplete="current-password" required></div>
+        <button class="btn" type="submit" ${configured ? '' : 'disabled'}>Masuk</button>
+      </form>
+      <p class="hint">Lupa password? Minta CEO untuk meresetnya.</p>
+    </div>
+  </div>`;
+  const form = $('#login-form');
+  if (form) form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn = form.querySelector('button'); btn.disabled = true; btn.textContent = 'Memeriksa...';
+    const { data, error } = await sb.auth.signInWithPassword({ email: $('#email').value.trim(), password: $('#password').value });
+    if (error) {
+      renderLogin(/invalid/i.test(error.message) ? 'Email atau password salah. Coba lagi.' : 'Gagal masuk: ' + error.message);
+      return;
+    }
+    session = data.session;
+    await enterApp();
+  });
+}
+
+function renderNoProfile() {
+  $('#app').innerHTML = `
+  <div class="center"><div class="login">
+    <img src="logo-dopamilk.png" alt="Logo Dopamilku">
+    <h1>Profilmu belum ada</h1>
+    <p class="sub">Akun ini berhasil login, tapi belum punya profil anggota. Jalankan supabase-setup.sql di Supabase, lalu muat ulang halaman ini.</p>
+    <button class="btn ghost" data-action="logout">Keluar</button>
+  </div></div>`;
+}
+
+/* ---------- layar: kerangka aplikasi ---------- */
+function renderApp() {
+  const me = state.me;
+  $('#app').innerHTML = `
+  <header class="topbar">
+    <div class="brand">
+      <img src="logo-dopamilk.png" alt="Logo Dopamilku">
+      <div><strong>Dashboard Tim Dopa</strong><span>#MengembalikanMoodmu</span></div>
+    </div>
+    <nav class="tabs" aria-label="Menu utama">
+      <button class="tab" data-action="nav" data-view="overview">Ringkasan tim</button>
+      <button class="tab" data-action="nav" data-view="board">Papan kerja</button>
+    </nav>
+    <div class="me">
+      <div class="me-text"><b>${esc(me.full_name)}</b><small>${esc(me.job_title || '')}</small></div>
+      ${avatar(me)}
+      <button class="btn ghost mini" data-action="logout">Keluar</button>
+    </div>
+  </header>
+  <main class="page" id="main"></main>`;
+  renderMain();
+}
+
+function renderMain() {
+  if (!$('#main')) return;
+  document.querySelectorAll('.tab').forEach(t => {
+    if (t.dataset.view === state.view) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current');
+  });
+  if (state.view === 'overview') renderOverview(); else renderBoard();
+}
+
+/* ---------- layar: ringkasan tim ---------- */
+function renderOverview() {
+  const today = todayStr();
+  const all = state.tasks;
+  const doing = all.filter(t => t.status === 'doing').length;
+  const todo = all.filter(t => t.status === 'todo').length;
+  const done = all.filter(t => t.status === 'done').length;
+  const late = all.filter(t => t.status !== 'done' && t.deadline && t.deadline < today).length;
+
+  const cards = state.profiles.map(p => {
+    const mine = state.tasks.filter(t => t.owner_id === p.id);
+    const c = s => mine.filter(t => t.status === s).length;
+    const wl = workload(p.id);
+    const doingTitles = mine.filter(t => t.status === 'doing').slice(0, 2).map(t => esc(t.title));
+    const lateN = mine.filter(t => t.status !== 'done' && t.deadline && t.deadline < today).length;
+    return `
+    <article class="member${p.id === state.me.id ? ' is-me' : ''}" role="button" tabindex="0" data-action="pick-member" data-id="${p.id}">
+      <div class="member-head">${avatar(p, 'lg')}
+        <div><strong>${esc(p.full_name)}${p.id === state.me.id ? ' (kamu)' : ''}</strong><small>${esc(p.job_title || 'Anggota tim')}</small></div>
+      </div>
+      <div class="member-body">
+        <div class="glass">${glassSvg(wl)}</div>
+        <div class="member-info">
+          <div><span class="chip load-${wl.level.k}">Beban ${wl.level.label.toLowerCase()}</span>
+            ${lateN ? `<span class="chip due late">${lateN} lewat tenggat</span>` : ''}</div>
+          <div class="counts"><span><b>${c('todo')}</b>To Do</span><span><b>${c('doing')}</b>Doing</span><span><b>${c('done')}</b>Done</span></div>
+          <p class="now">${doingTitles.length ? `<b>Sedang dikerjakan:</b> ${doingTitles.join(', ')}` : 'Belum ada tugas yang dikerjakan.'}</p>
+        </div>
+      </div>
+    </article>`;
+  }).join('');
+
+  $('#main').innerHTML = `
+    <h1 class="page-title">Halo, ${esc(firstName(state.me.full_name))}.</h1>
+    <p class="page-sub">${isCeo() ? 'Ini kondisi Tim Dopa saat ini. Klik anggota untuk membuka papan kerjanya dan menambah tugas.' : 'Ini kondisi Tim Dopa saat ini. Klik namamu untuk update tugas.'}</p>
+    <div class="summary" aria-label="Ringkasan seluruh tim">
+      <span><b>${doing}</b> sedang dikerjakan</span>
+      <span><b>${todo}</b> menunggu</span>
+      <span><b>${done}</b> selesai</span>
+      <span class="late"><b>${late}</b> lewat tenggat</span>
+    </div>
+    <section class="members" aria-label="Anggota tim">${cards || '<p class="empty">Belum ada anggota.</p>'}</section>`;
+}
+
+/* ---------- layar: papan kerja ---------- */
+function renderBoard() {
+  const p = profileOf(state.selectedId) || state.me;
+  const editable = canEdit(p.id);
+  const own = p.id === state.me.id;
+  const wl = workload(p.id);
+  const today = todayStr();
+  const mine = state.tasks.filter(t => t.owner_id === p.id);
+
+  const picks = state.profiles.map(x => `
+    <button class="pick" data-action="pick-member" data-id="${x.id}" aria-pressed="${x.id === p.id}">
+      ${avatar(x, 'sm')}${esc(x.full_name)}</button>`).join('');
+
+  const cols = STATUSES.map(s => {
+    const items = mine.filter(t => t.status === s.key);
+    const cards = items.map(t => taskCard(t, today, editable)).join('') ||
+      `<div class="empty">${s.key === 'todo' ? 'Belum ada tugas di antrian.' : s.key === 'doing' ? 'Belum ada yang dikerjakan.' : 'Belum ada yang selesai.'}</div>`;
+    return `
+    <section class="col" data-status="${s.key}" aria-label="${s.label}">
+      <div class="col-head"><span class="mark ${s.key}"></span><div><h3>${s.label}</h3><small>${s.hint}</small></div>
+        <span class="col-count">${items.length}</span></div>
+      <div class="cards">${cards}</div>
+    </section>`;
+  }).join('');
+
+  $('#main').innerHTML = `
+    <div class="board-head">
+      <div class="who">${avatar(p, 'lg')}
+        <div><h2>${own ? 'Papan kerja saya' : 'Papan kerja ' + esc(p.full_name)}</h2><p>${esc(p.job_title || 'Anggota tim')}</p></div></div>
+      <div class="load-box">
+        <div class="glass">${glassSvg(wl)}</div>
+        <div><span class="chip load-${wl.level.k}">Beban ${wl.level.label.toLowerCase()}</span><small>${wl.count} tugas belum selesai</small></div>
+      </div>
+      ${editable ? `<button class="btn" data-action="new-task">Tambah tugas</button>` : ''}
+    </div>
+    <div class="switcher"><span>Lihat papan:</span>${picks}</div>
+    ${editable ? '' : `<div class="notice">Kamu sedang melihat papan ${esc(p.full_name)}. Hanya ${esc(firstName(p.full_name))} dan CEO yang bisa mengubahnya.</div>`}
+    <div class="board">${cols}</div>`;
+}
+
+function taskCard(t, today, editable) {
+  let due = '';
+  if (t.deadline) {
+    const late = t.status !== 'done' && t.deadline < today;
+    const isToday = t.status !== 'done' && t.deadline === today;
+    due = `<span class="chip due ${late ? 'late' : isToday ? 'today' : ''}">${late ? 'Lewat tenggat ' : isToday ? 'Tenggat hari ini' : 'Tenggat '}${isToday ? '' : fmtDate(t.deadline)}</span>`;
+  }
+  let actions = '';
+  if (editable) {
+    if (t.status === 'todo')  actions = `<button class="btn mini" data-action="move" data-id="${t.id}" data-to="doing">Mulai kerjakan</button>`;
+    if (t.status === 'doing') actions = `<button class="btn mini" data-action="move" data-id="${t.id}" data-to="done">Tandai selesai</button>
+                                          <button class="btn mini ghost" data-action="move" data-id="${t.id}" data-to="todo">Kembalikan ke To Do</button>`;
+    if (t.status === 'done')  actions = `<button class="btn mini ghost" data-action="move" data-id="${t.id}" data-to="doing">Buka lagi</button>`;
+  }
+  return `
+  <article class="task ${t.status === 'done' ? 'is-done' : ''}" tabindex="0" data-action="open-task" data-id="${t.id}" ${editable ? 'draggable="true"' : ''}>
+    <div class="task-top"><span class="chip w-${t.weight}">${WEIGHT_LABEL[t.weight] || t.weight}</span>${due}</div>
+    <h4>${esc(t.title)}</h4>
+    ${t.notes ? `<p class="note"><b>Catatan:</b> ${esc(t.notes)}</p>` : ''}
+    ${actions ? `<div class="task-actions">${actions}</div>` : ''}
+  </article>`;
+}
+
+/* ---------- modal tugas ---------- */
+const modalOpen = () => !!$('#modal-root').firstElementChild;
+function closeModal() { $('#modal-root').innerHTML = ''; }
+
+function openTaskModal(task, ownerId) {
+  const isNew = !task;
+  const targetOwner = task ? task.owner_id : ownerId;
+  const ro = !canEdit(targetOwner);
+  const t = task || { title: '', status: 'todo', weight: 'sedang', deadline: '', notes: '' };
+  const ownerOpts = state.profiles.map(p => `<option value="${p.id}" ${p.id === targetOwner ? 'selected' : ''}>${esc(p.full_name)}</option>`).join('');
+  const dis = ro ? 'disabled' : '';
+
+  $('#modal-root').innerHTML = `
+  <div class="backdrop" data-action="close-modal">
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dlg-title">
+      <h3 id="dlg-title">${isNew ? 'Tambah tugas' : ro ? 'Detail tugas' : 'Edit tugas'}</h3>
+      <div class="field"><label for="f-title">Nama tugas</label><input id="f-title" maxlength="160" value="${esc(t.title)}" ${dis}></div>
+      <div class="grid2">
+        <div class="field"><label for="f-owner">Dikerjakan oleh</label>
+          <select id="f-owner" ${isCeo() && !ro ? '' : 'disabled'}>${ownerOpts}</select></div>
+        <div class="field"><label for="f-status">Status</label>
+          <select id="f-status" ${dis}>${STATUSES.map(s => `<option value="${s.key}" ${s.key === t.status ? 'selected' : ''}>${s.label}</option>`).join('')}</select></div>
+        <div class="field"><label for="f-weight">Bobot tugas</label>
+          <select id="f-weight" ${dis}>${Object.keys(WEIGHT_LABEL).map(k => `<option value="${k}" ${k === t.weight ? 'selected' : ''}>${WEIGHT_LABEL[k]} (${CONFIG.WEIGHT_POINTS[k]} poin)</option>`).join('')}</select></div>
+        <div class="field"><label for="f-deadline">Tenggat</label>
+          <input id="f-deadline" type="date" value="${esc(t.deadline || '')}" ${dis}></div>
+      </div>
+      <p class="field"><small>Bobot dipakai untuk menghitung beban kerja di gelas susu.</small></p>
+      <div class="field"><label for="f-notes">Catatan</label>
+        <textarea id="f-notes" maxlength="1500" placeholder="Progres, kendala, atau link yang perlu diketahui tim" ${dis}>${esc(t.notes || '')}</textarea></div>
+      <div class="dialog-actions">
+        ${ro ? '' : `<button class="btn" data-action="save-task" data-id="${task ? task.id : ''}">${isNew ? 'Tambah tugas' : 'Simpan perubahan'}</button>`}
+        <button class="btn ghost" data-action="close-modal-btn">${ro ? 'Tutup' : 'Batal'}</button>
+        ${!isNew && !ro ? `<button class="btn danger spacer" data-action="delete-task" data-id="${task.id}" style="margin-left:auto">Hapus tugas</button>` : ''}
+      </div>
+    </div>
+  </div>`;
+  setTimeout(() => { const f = $('#f-title'); if (f && !ro) f.focus(); }, 30);
+}
+
+async function saveTask(id, btn) {
+  const title = $('#f-title').value.trim();
+  if (!title) { toast('Isi nama tugas dulu.', 'error'); $('#f-title').focus(); return; }
+  const payload = {
+    title,
+    owner_id: $('#f-owner').value,
+    status: $('#f-status').value,
+    weight: $('#f-weight').value,
+    deadline: $('#f-deadline').value || null,
+    notes: $('#f-notes').value.trim() || null
+  };
+  btn.disabled = true;
+  const q = id
+    ? sb.from('tasks').update(payload).eq('id', id).select()
+    : sb.from('tasks').insert(payload).select();
+  const { data, error } = await q;
+  if (error || !data || !data.length) {
+    btn.disabled = false;
+    toast('Tugas belum tersimpan. ' + (error ? error.message : 'Kamu tidak punya izin untuk tugas ini.'), 'error');
+    return;
+  }
+  closeModal();
+  await loadTasks();
+  renderMain();
+  toast(id ? 'Perubahan tersimpan.' : 'Tugas ditambahkan.');
+}
+
+async function deleteTask(id) {
+  const t = state.tasks.find(x => x.id === id);
+  if (!t || !confirm('Hapus tugas "' + t.title + '"? Tindakan ini tidak bisa dibatalkan.')) return;
+  const { data, error } = await sb.from('tasks').delete().eq('id', id).select('id');
+  if (error || !data || !data.length) { toast('Tugas belum terhapus. ' + (error ? error.message : 'Kamu tidak punya izin.'), 'error'); return; }
+  closeModal();
+  await loadTasks();
+  renderMain();
+  toast('Tugas dihapus.');
+}
+
+async function setStatus(id, to) {
+  const t = state.tasks.find(x => x.id === id);
+  if (!t || t.status === to || !canEdit(t.owner_id)) return;
+  const prev = t.status;
+  t.status = to; renderMain();
+  const { data, error } = await sb.from('tasks').update({ status: to }).eq('id', id).select('id');
+  if (error || !data || !data.length) {
+    t.status = prev; renderMain();
+    toast('Status belum berubah. ' + (error ? error.message : 'Kamu tidak punya izin.'), 'error');
+  }
+}
+
+/* ---------- interaksi ---------- */
+const actions = {
+  nav: el => { state.view = el.dataset.view; if (state.view === 'board' && !state.selectedId) state.selectedId = state.me.id; renderMain(); },
+  'pick-member': el => { state.selectedId = el.dataset.id; state.view = 'board'; renderMain(); window.scrollTo({ top: 0 }); },
+  'new-task': () => openTaskModal(null, state.selectedId || state.me.id),
+  'open-task': el => { const t = state.tasks.find(x => x.id === el.dataset.id); if (t) openTaskModal(t); },
+  move: el => setStatus(el.dataset.id, el.dataset.to),
+  'save-task': el => saveTask(el.dataset.id || null, el),
+  'delete-task': el => deleteTask(el.dataset.id),
+  'close-modal-btn': () => closeModal(),
+  logout: async () => { stopRealtime(); await sb.auth.signOut(); },
+};
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-action]');
+  if (!el) return;
+  if (el.dataset.action === 'close-modal') { if (e.target === el) closeModal(); return; }
+  const fn = actions[el.dataset.action];
+  if (fn) fn(el);
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && modalOpen()) { closeModal(); return; }
+  if (e.key === 'Enter' && e.target.matches && e.target.matches('article[data-action]')) {
+    e.preventDefault(); actions[e.target.dataset.action](e.target);
+  }
+});
+
+/* seret & lepas kartu antar kolom */
+let dragId = null;
+document.addEventListener('dragstart', e => {
+  const c = e.target.closest && e.target.closest('.task[draggable="true"]');
+  if (!c) return;
+  dragId = c.dataset.id; c.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragId);
+});
+document.addEventListener('dragend', () => {
+  dragId = null;
+  document.querySelectorAll('.dragging,.over').forEach(x => x.classList.remove('dragging', 'over'));
+});
+document.addEventListener('dragover', e => {
+  const col = e.target.closest && e.target.closest('.col');
+  if (!col || !dragId) return;
+  e.preventDefault();
+  document.querySelectorAll('.col.over').forEach(x => { if (x !== col) x.classList.remove('over'); });
+  col.classList.add('over');
+});
+document.addEventListener('drop', e => {
+  const col = e.target.closest && e.target.closest('.col');
+  if (!col || !dragId) return;
+  e.preventDefault();
+  const id = dragId; dragId = null;
+  col.classList.remove('over');
+  setStatus(id, col.dataset.status);
+});
+
+boot();
+</script>
+</body>
+</html>
