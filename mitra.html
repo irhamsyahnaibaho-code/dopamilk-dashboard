@@ -119,6 +119,26 @@ button.salin.done{color:var(--ok);border-color:var(--ok)}
 
 .empty{color:var(--ink-soft);font-size:13px;padding:16px;text-align:center}
 .count{font-size:12.5px;color:var(--ink-soft);margin:0 0 8px}
+
+/* ---------- pesanan ---------- */
+.order-row{display:grid;grid-template-columns:1.1fr 1.5fr 64px 1fr 32px;gap:8px;margin-bottom:8px;align-items:center}
+.order-row input,.order-row select{width:100%;font-size:13px;padding:7px 9px;border:1.5px solid var(--line);border-radius:8px;background:#fff}
+@media (max-width:720px){.order-row{grid-template-columns:1fr 1fr;grid-template-areas:"a b" "c d" "e e"}
+  .order-row>:nth-child(1){grid-area:a}.order-row>:nth-child(2){grid-area:b}.order-row>:nth-child(3){grid-area:c}
+  .order-row>:nth-child(4){grid-area:d}.order-row>:nth-child(5){grid-area:e;justify-self:end}}
+button.rm-row{background:none;border:1.5px solid var(--line);border-radius:8px;color:var(--bad);width:32px;height:32px;line-height:1}
+button.add-row{border:1.5px dashed var(--line);background:#fff;border-radius:9px;padding:8px 14px;font-size:13px;font-weight:600;color:var(--navy)}
+button.submit-order{background:var(--orange);color:#17275E;border:none;border-radius:10px;padding:10px 22px;font-weight:700;font-size:14px}
+button.submit-order:disabled{opacity:.55}
+td.num{font-variant-numeric:tabular-nums;text-align:right}
+th.num{text-align:right}
+button.mini{font-size:12px;border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:4px 11px;margin-right:4px;color:var(--ink)}
+button.mini.primary{background:var(--navy);color:#fff;border-color:var(--navy)}
+button.mini.ghost{color:var(--bad);border-color:var(--bad-bg)}
+.msg-ok{background:var(--ok-bg);color:var(--ok);border-radius:8px;padding:9px 12px;font-size:13px;margin-top:10px}
+.msg-err{background:var(--bad-bg);color:var(--bad);border-radius:8px;padding:9px 12px;font-size:13px;margin-top:10px}
+.reward-bar{width:90px;height:8px;background:var(--line);border-radius:999px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:6px}
+.reward-bar i{display:block;height:100%;background:var(--ok)}
 </style>
 </head>
 <body>
@@ -151,6 +171,7 @@ button.salin.done{color:var(--ok);border-color:var(--ok)}
     <button data-tab="gel">Per gelombang</button>
     <button data-tab="unik">Kontak unik</button>
     <button data-tab="skrip">Skrip chat</button>
+    <button data-tab="pesanan">Pesanan harian</button>
   </nav>
 
   <main>
@@ -222,6 +243,61 @@ Kalau Kakak berkenan, boleh kami jelaskan detailnya? Kalau belum bisa juga tidak
       <p class="sub" style="margin:0 0 14px">Pilih musyrif/ah dulu supaya <code>{nama}</code>, <code>{gelombang}</code>, <code>{tanggal}</code>, <code>{kelompok}</code> terisi otomatis saat Salin. Bagian [kurung siku] diisi manual.</p>
       <select id="sk-orang" style="margin-bottom:18px;width:100%;max-width:420px"></select>
       <div id="skrip-body"></div>
+    </section>
+
+    <section class="panel" data-panel="pesanan">
+      <div class="card">
+        <h2>Catat pesanan</h2>
+        <p class="sub">Pilih halaqoh yang mengirim rekap, lalu isi pesanannya sesuai format WA yang masuk. Pembayaran QRIS saja.</p>
+        <div class="controls">
+          <select id="po-penugasan" style="min-width:260px;flex:1"></select>
+          <input type="date" id="po-tanggal">
+        </div>
+        <div id="order-rows"></div>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:4px;flex-wrap:wrap">
+          <button type="button" class="add-row" id="po-addrow">+ Tambah baris</button>
+          <span style="flex:1"></span>
+          <button type="button" class="submit-order" id="po-submit">Simpan pesanan</button>
+        </div>
+        <div id="po-msg"></div>
+      </div>
+
+      <div class="card">
+        <h2>Pesanan hari ini — <span id="po-halaqoh-label">pilih halaqoh di atas</span></h2>
+        <p class="sub" id="po-today-sub">Belum ada halaqoh dipilih.</p>
+        <div class="tbl-wrap" style="max-height:38vh">
+          <table>
+            <thead><tr><th>Pemesan</th><th>Menu</th><th class="num">Jml</th><th class="hide-sm">Bayar</th><th></th></tr></thead>
+            <tbody id="tbl-po-today"></tbody>
+          </table>
+          <p class="empty hidden" id="empty-po-today">Belum ada pesanan tercatat untuk halaqoh &amp; tanggal ini.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Rekap reward semua halaqoh</h2>
+        <p class="sub">Urut dari cup terbanyak. 1 cup gratis varian reguler per kelipatan 7 cup, akumulasi selama satu gelombang.</p>
+        <div class="controls"><div class="chips" id="rw-gel-chips"></div></div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Gel</th><th>Halaqoh</th><th class="hide-sm">Musyrif</th><th class="num">Total cup</th><th class="num">Sisa reward</th><th>Progres ke reward berikut</th><th>Aksi</th></tr></thead>
+            <tbody id="tbl-reward"></tbody>
+          </table>
+          <p class="empty hidden" id="empty-reward">Belum ada data.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Riwayat reward &amp; voucher</h2>
+        <p class="sub">Semua klaim dan voucher yang pernah dicatat. Cari kode voucher di sini kalau musyrif/ah mau menukarnya.</p>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Waktu</th><th>Halaqoh</th><th class="hide-sm">Musyrif</th><th class="num">Cup</th><th>Jenis</th><th>Kode / berlaku s.d.</th><th>Status</th></tr></thead>
+            <tbody id="tbl-riwayat"></tbody>
+          </table>
+          <p class="empty hidden" id="empty-riwayat">Belum ada reward tercatat.</p>
+        </div>
+      </div>
     </section>
   </main>
 </div>
@@ -300,17 +376,23 @@ $('#btn-logout').addEventListener('click', async () => {
 
 /* ---------------- DATA ---------------- */
 async function loadAll(){
-  const [{ data: gelombang, error: e1 }, { data: musyrif, error: e2 }, { data: penugasan, error: e3 }, { data: kontak, error: e4 }] = await Promise.all([
+  const [{ data: gelombang, error: e1 }, { data: musyrif, error: e2 }, { data: penugasan, error: e3 }, { data: kontak, error: e4 }, { data: menuAll, error: e5 }] = await Promise.all([
     sb.from('pndi_gelombang').select('*').order('nomor'),
     sb.from('pndi_musyrif').select('*'),
     sb.from('pndi_penugasan').select('*'),
-    sb.from('pndi_kontak').select('*')
+    sb.from('pndi_kontak').select('*'),
+    sb.from('dopa_menu').select('*').order('nama')
   ]);
-  if (e1 || e2 || e3 || e4) { setSync(false, 'Gagal memuat data'); console.error(e1||e2||e3||e4); return; }
+  if (e1 || e2 || e3 || e4 || e5) { setSync(false, 'Gagal memuat data'); console.error(e1||e2||e3||e4||e5); return; }
   state.gelombang = gelombang; state.musyrif = musyrif; state.penugasan = penugasan;
   state.kontak = new Map((kontak||[]).map(r => [r.nim, r]));
+  state.menuAll = menuAll || [];
+  state.menuActive = state.menuAll.filter(m => m.aktif);
   buildRows();
   renderAll();
+  initPesanan();
+  await loadRewardView();
+  await loadRiwayat();
   setSync(true, 'Status bersama tersambung');
 }
 
@@ -353,6 +435,12 @@ function subscribeRealtime(){
     if (status === 'SUBSCRIBED') setSync(true, 'Status bersama tersambung');
     else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') setSync(false, 'Terputus, muat ulang halaman');
   });
+  sb.channel('pesanan-live').on('postgres_changes', { event: '*', schema: 'public', table: 'pndi_pesanan' }, () => {
+    loadTodayList(); loadRewardView();
+  }).subscribe();
+  sb.channel('reward-live').on('postgres_changes', { event: '*', schema: 'public', table: 'pndi_reward' }, () => {
+    loadRewardView(); loadRiwayat();
+  }).subscribe();
 }
 
 function setSync(on, text){
@@ -505,6 +593,213 @@ $('#fu-jenis').addEventListener('change', e => { state.jenisU = e.target.value; 
 $('#fu-status').addEventListener('change', e => { state.statusU = e.target.value; renderUnik(); });
 $('#fu-cari').addEventListener('input', e => { state.qU = e.target.value; renderUnik(); });
 $('#tpl').addEventListener('input', () => { renderGel(); renderUnik(); });
+
+/* ---------------- PESANAN HARIAN ---------------- */
+state.orderRows = [];
+state.poSel = '';
+state.poTanggal = new Date().toISOString().slice(0,10);
+state.rwGel = 'all';
+
+function blankRow(){ return { pemesan:'', menu_id:'', jumlah:1, bayar:'Belum bayar' }; }
+
+function initPesanan(){
+  const sel = $('#po-penugasan');
+  sel.innerHTML = '';
+  sel.appendChild(new Option('Pilih halaqoh…', ''));
+  state.rows.forEach(r => sel.appendChild(new Option('Gel '+r.gelombang+' · Halaqoh '+r.kelompok+' · '+r.nama, r.id)));
+  sel.value = state.poSel;
+  sel.addEventListener('change', () => { state.poSel = sel.value; updatePoLabel(); loadTodayList(); });
+
+  $('#po-tanggal').value = state.poTanggal;
+  $('#po-tanggal').addEventListener('change', (e) => { state.poTanggal = e.target.value; loadTodayList(); });
+
+  if (state.orderRows.length === 0) { state.orderRows = [blankRow(), blankRow(), blankRow()]; }
+  renderOrderRows();
+  updatePoLabel();
+  renderRewardChips();
+}
+
+function menuOptionLabel(m){ return m.nama + ' — Rp' + fmtN(m.harga||0); }
+
+function renderOrderRows(){
+  const box = $('#order-rows'); box.innerHTML = '';
+  state.orderRows.forEach((row, idx) => {
+    const wrap = document.createElement('div'); wrap.className = 'order-row';
+    const nameInp = document.createElement('input'); nameInp.type='text'; nameInp.placeholder='Nama panggilan pemesan'; nameInp.value = row.pemesan;
+    nameInp.addEventListener('input', () => row.pemesan = nameInp.value);
+    const menuSel = document.createElement('select');
+    menuSel.appendChild(new Option('Pilih menu…',''));
+    state.menuActive.forEach(m => menuSel.appendChild(new Option(menuOptionLabel(m), m.id)));
+    menuSel.value = row.menu_id;
+    menuSel.addEventListener('change', () => row.menu_id = menuSel.value);
+    const qtyInp = document.createElement('input'); qtyInp.type='number'; qtyInp.min='1'; qtyInp.value = row.jumlah;
+    qtyInp.addEventListener('input', () => row.jumlah = qtyInp.value);
+    const baySel = document.createElement('select');
+    [['Belum bayar','Belum bayar'],['Lunas QRIS','Lunas QRIS']].forEach(([v,l]) => baySel.appendChild(new Option(l,v)));
+    baySel.value = row.bayar;
+    baySel.addEventListener('change', () => row.bayar = baySel.value);
+    const rmBtn = document.createElement('button'); rmBtn.type='button'; rmBtn.className='rm-row'; rmBtn.textContent='×';
+    rmBtn.addEventListener('click', () => { state.orderRows.splice(idx,1); if(state.orderRows.length===0) state.orderRows.push(blankRow()); renderOrderRows(); });
+    wrap.append(nameInp, menuSel, qtyInp, baySel, rmBtn);
+    box.appendChild(wrap);
+  });
+}
+
+$('#po-addrow').addEventListener('click', () => { state.orderRows.push(blankRow()); renderOrderRows(); });
+
+$('#po-submit').addEventListener('click', async () => {
+  const msgBox = $('#po-msg'); msgBox.innerHTML = '';
+  if (!state.poSel) { msgBox.innerHTML = '<div class="msg-err">Pilih halaqoh dulu ya.</div>'; return; }
+  const payload = state.orderRows
+    .filter(r => r.pemesan.trim() && r.menu_id)
+    .map(r => ({ penugasan_id: state.poSel, tanggal: state.poTanggal, pemesan: r.pemesan.trim(), menu_id: Number(r.menu_id), jumlah: Math.max(1, Number(r.jumlah)||1), bayar: r.bayar }));
+  if (payload.length === 0) { msgBox.innerHTML = '<div class="msg-err">Isi minimal satu pesanan (nama + menu).</div>'; return; }
+  const btn = $('#po-submit'); btn.disabled = true; btn.textContent = 'Menyimpan…';
+  const { error } = await sb.from('pndi_pesanan').insert(payload);
+  btn.disabled = false; btn.textContent = 'Simpan pesanan';
+  if (error) { msgBox.innerHTML = '<div class="msg-err">Gagal menyimpan: ' + error.message + '</div>'; return; }
+  msgBox.innerHTML = '<div class="msg-ok">' + payload.length + ' pesanan tersimpan ✅</div>';
+  state.orderRows = [blankRow(), blankRow(), blankRow()];
+  renderOrderRows();
+  await loadTodayList();
+  await loadRewardView();
+  setTimeout(() => { msgBox.innerHTML=''; }, 4000);
+});
+
+function updatePoLabel(){
+  const r = state.rows.find(x => x.id === state.poSel);
+  $('#po-halaqoh-label').textContent = r ? ('Gel '+r.gelombang+' · Halaqoh '+r.kelompok+' · '+r.nama) : 'pilih halaqoh di atas';
+}
+
+async function loadTodayList(){
+  const tb = $('#tbl-po-today');
+  if (!state.poSel) { tb.innerHTML=''; $('#empty-po-today').classList.add('hidden'); $('#po-today-sub').textContent='Belum ada halaqoh dipilih.'; return; }
+  const { data, error } = await sb.from('pndi_pesanan').select('*').eq('penugasan_id', state.poSel).eq('tanggal', state.poTanggal).order('id');
+  if (error) { console.error(error); return; }
+  const menuMap = new Map(state.menuAll.map(m => [m.id, m]));
+  tb.innerHTML = '';
+  $('#empty-po-today').classList.toggle('hidden', (data||[]).length > 0);
+  let totalCup = 0, totalRp = 0;
+  (data||[]).forEach(row => {
+    const m = menuMap.get(row.menu_id) || {};
+    totalCup += row.jumlah; totalRp += (m.harga||0) * row.jumlah;
+    const tr = document.createElement('tr');
+    tr.append(td(row.pemesan,'nm'), td(m.nama||'—'), td(row.jumlah,'num'));
+    const bTd = document.createElement('td'); bTd.className='hide-sm';
+    const pill = document.createElement('span'); pill.className='pill'; pill.textContent=row.bayar;
+    pill.style.color = row.bayar==='Lunas QRIS' ? 'var(--ok)' : 'var(--warn)'; bTd.appendChild(pill); tr.appendChild(bTd);
+    const aTd = document.createElement('td');
+    const del = document.createElement('button'); del.className='mini ghost'; del.type='button'; del.textContent='Hapus';
+    del.addEventListener('click', async () => { if(!confirm('Hapus pesanan '+row.pemesan+'?')) return; await sb.from('pndi_pesanan').delete().eq('id', row.id); loadTodayList(); loadRewardView(); });
+    aTd.appendChild(del); tr.appendChild(aTd);
+    tb.appendChild(tr);
+  });
+  $('#po-today-sub').textContent = (data||[]).length + ' pesanan · ' + totalCup + ' cup · Rp' + fmtN(totalRp) + ' (tanggal ' + state.poTanggal + ')';
+}
+
+async function loadRewardView(){
+  const { data, error } = await sb.from('pndi_rekap_reward').select('*').order('total_cup', { ascending: false });
+  if (error) { console.error(error); return; }
+  state.reward = data || [];
+  renderReward();
+}
+
+function renderRewardChips(){
+  const box = $('#rw-gel-chips'); box.innerHTML = '';
+  const mk = (val,label) => { const b=document.createElement('button'); b.className='chip'+(state.rwGel===val?' on':''); b.textContent=label; b.addEventListener('click',()=>{state.rwGel=val; renderRewardChips(); renderReward();}); return b; };
+  box.appendChild(mk('all','Semua'));
+  state.gelombang.forEach(g => box.appendChild(mk(String(g.nomor), 'Gel '+g.nomor)));
+}
+
+function genKodeVoucher(r){
+  const rnd = Math.floor(1000 + Math.random()*9000);
+  return 'DOPA-G' + r.gelombang + r.kelompok + '-' + rnd;
+}
+
+async function catatReward(penugasanId, jumlah, jenis){
+  if (jumlah <= 0) return;
+  const payload = { penugasan_id: penugasanId, jumlah_cup: jumlah, jenis };
+  let kode = null;
+  if (jenis === 'Voucher') {
+    const r = state.rows.find(x => x.id === penugasanId);
+    kode = genKodeVoucher(r || { gelombang:'', kelompok:'' });
+    payload.kode_voucher = kode;
+  }
+  const { error } = await sb.from('pndi_reward').insert(payload);
+  if (error) { alert('Gagal mencatat reward: ' + error.message); return; }
+  await loadRewardView();
+  await loadRiwayat();
+  if (jenis === 'Voucher') {
+    alert('Voucher dibuat untuk halaqoh ini:\n\nKode: ' + kode + '\nBerlaku 1 bulan dari hari ini.\n\nSampaikan kode ini ke musyrif/ah ya.');
+  }
+}
+
+async function loadRiwayat(){
+  const { data, error } = await sb.from('pndi_reward').select('*').order('dibuat_pada', { ascending: false }).limit(200);
+  if (error) { console.error(error); return; }
+  state.riwayat = data || [];
+  renderRiwayat();
+}
+
+async function toggleDipakai(id, val){
+  const { error } = await sb.from('pndi_reward').update({ dipakai: val }).eq('id', id);
+  if (error) { alert('Gagal memperbarui status: ' + error.message); return; }
+  await loadRiwayat();
+}
+
+function renderRiwayat(){
+  const tb = $('#tbl-riwayat'); tb.innerHTML = '';
+  const rows = state.riwayat || [];
+  $('#empty-riwayat').classList.toggle('hidden', rows.length > 0);
+  rows.forEach(r => {
+    const info = state.rows.find(x => x.id === r.penugasan_id) || {};
+    const tr = document.createElement('tr');
+    const waktu = r.dibuat_pada ? new Date(r.dibuat_pada).toLocaleString('id-ID', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '—';
+    tr.append(td(waktu), td('Gel '+(info.gelombang||'?')+' · '+(info.kelompok||'?')), td(info.nama||'—','hide-sm'), td(r.jumlah_cup,'num'));
+    const jTd = document.createElement('td'); const jp = document.createElement('span'); jp.className='pill';
+    jp.textContent = r.jenis; jp.style.color = r.jenis==='Voucher' ? 'var(--orange-dk)' : 'var(--ok)'; jTd.appendChild(jp); tr.appendChild(jTd);
+    const kTd = document.createElement('td');
+    if (r.jenis === 'Voucher') { kTd.innerHTML = '<b>' + (r.kode_voucher||'—') + '</b>'; const sm=document.createElement('div'); sm.className='when'; sm.textContent = r.berlaku_sampai ? ('s.d. '+r.berlaku_sampai) : ''; kTd.appendChild(sm); }
+    else { kTd.textContent = '—'; }
+    tr.appendChild(kTd);
+    const sTd = document.createElement('td');
+    if (r.jenis === 'Voucher') {
+      if (r.dipakai) { const b=document.createElement('span'); b.className='pill'; b.style.color='var(--ink-soft)'; b.textContent='Sudah dipakai'; sTd.appendChild(b); }
+      else { const btn=document.createElement('button'); btn.className='mini primary'; btn.type='button'; btn.textContent='Tandai sudah dipakai'; btn.addEventListener('click', () => toggleDipakai(r.id, true)); sTd.appendChild(btn); }
+    } else { sTd.textContent = '—'; }
+    tr.appendChild(sTd);
+    tb.appendChild(tr);
+  });
+}
+
+function renderReward(){
+  const tb = $('#tbl-reward'); tb.innerHTML='';
+  const rows = (state.reward||[]).filter(r => state.rwGel==='all' || String(r.gelombang)===String(state.rwGel));
+  $('#empty-reward').classList.toggle('hidden', rows.length>0);
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.append(td(r.gelombang), td(r.halaqoh), td(r.musyrif,'hide-sm'), td(r.total_cup,'num'), td(r.reward_sisa,'num'));
+    const pTd = document.createElement('td');
+    const pct = Math.round(((r.total_cup % 7) / 7) * 100);
+    const bar = document.createElement('span'); bar.className='reward-bar';
+    const i = document.createElement('i'); i.style.width = pct + '%'; bar.appendChild(i);
+    pTd.appendChild(bar);
+    const lbl = document.createElement('span'); lbl.style.fontSize='12px'; lbl.style.color='var(--ink-soft)';
+    lbl.textContent = (r.total_cup % 7) + '/7 cup';
+    pTd.appendChild(lbl);
+    tr.appendChild(pTd);
+    const aTd = document.createElement('td');
+    if (r.reward_sisa > 0) {
+      const claim = document.createElement('button'); claim.className='mini primary'; claim.type='button'; claim.textContent='Catat klaim ('+r.reward_sisa+')';
+      claim.addEventListener('click', () => catatReward(r.penugasan_id, r.reward_sisa, 'Klaim langsung'));
+      const voucher = document.createElement('button'); voucher.className='mini'; voucher.type='button'; voucher.textContent='Jadi voucher';
+      voucher.addEventListener('click', () => catatReward(r.penugasan_id, r.reward_sisa, 'Voucher'));
+      aTd.append(claim, voucher);
+    } else { aTd.textContent = '—'; }
+    tr.appendChild(aTd);
+    tb.appendChild(tr);
+  });
+}
 
 /* ---------------- SKRIP CHAT ---------------- */
 const TAHAP = {1:'Tahap 1 · Menghubungi',2:'Tahap 2 · Respons',3:'Tahap 3 · Pertanyaan umum',4:'Tahap 4 · Operasional harian',5:'Tahap 5 · Reward & masalah',6:'Tahap 6 · Penutup'};
