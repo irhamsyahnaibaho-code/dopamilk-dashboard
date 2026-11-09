@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mitra PNDI · Dopamilk</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧋</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+:root{
+  --navy:#17275E; --navy-2:#223784; --orange:#F5A524; --orange-dk:#D98A0E;
+  --cream:#FBF3E7; --card:#FFFFFF; --line:#E9DFCF; --ink:#1D2333; --ink-soft:#6B6F85;
+  --ok:#1E8E5A; --ok-bg:#E7F6EE; --warn:#C8780A; --warn-bg:#FBEEDA; --bad:#C2403A; --bad-bg:#FBEAE8;
+  --radius:14px; --shadow:0 1px 2px rgba(23,39,94,.06), 0 8px 24px -12px rgba(23,39,94,.18);
+  color-scheme: light;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--cream);color:var(--ink);font-family:Inter,system-ui,sans-serif;line-height:1.5}
+h1,h2,h3,.brand{font-family:Poppins,system-ui,sans-serif}
+button{font-family:inherit;cursor:pointer}
+input,select{font-family:inherit}
+img{max-width:100%}
+.hidden{display:none !important}
+
+/* ---------- login ---------- */
+#login-screen{min-height:100svh;display:flex;align-items:center;justify-content:center;padding:24px}
+.login-card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);padding:40px 36px;max-width:380px;width:100%;text-align:center}
+.login-card img{height:56px;margin-bottom:14px}
+.login-card h1{font-size:20px;margin:0 0 4px;color:var(--navy)}
+.login-card p.sub{color:var(--ink-soft);font-size:14px;margin:0 0 26px}
+.field{text-align:left;margin-bottom:16px}
+.field label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--navy)}
+.field input{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:10px;font-size:15px;background:#FFFDF9}
+.field input:focus{outline:2px solid var(--orange);outline-offset:1px;border-color:var(--orange)}
+.btn-primary{width:100%;background:var(--navy);color:#fff;border:none;border-radius:10px;padding:12px;font-size:15px;font-weight:600;margin-top:6px}
+.btn-primary:hover{background:var(--navy-2)}
+.btn-primary:disabled{opacity:.6;cursor:default}
+.login-err{background:var(--bad-bg);color:var(--bad);border-radius:8px;padding:10px 12px;font-size:13px;margin-bottom:16px;text-align:left}
+.login-note{font-size:12px;color:var(--ink-soft);margin-top:20px}
+
+/* ---------- app shell ---------- */
+#app{min-height:100svh}
+header.top{background:var(--navy);color:#fff;padding:14px 20px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:10}
+header.top img{height:32px}
+header.top .title{font-weight:600;font-size:16px;flex:1}
+header.top .title small{display:block;font-weight:400;font-size:12px;color:#C7CEF0}
+header.top .sync{font-size:12px;color:#C7CEF0;display:flex;align-items:center;gap:6px;white-space:nowrap}
+header.top .sync .dot{width:7px;height:7px;border-radius:50%;background:#59D98A}
+header.top .sync.off .dot{background:#E8A33D}
+header.top button.logout{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:7px 16px;font-size:13px}
+header.top button.logout:hover{background:rgba(255,255,255,.22)}
+
+nav.tabs{display:flex;gap:4px;padding:10px 20px 0;background:var(--cream);overflow-x:auto;border-bottom:1px solid var(--line)}
+nav.tabs button{background:none;border:none;padding:10px 16px;font-size:14px;font-weight:600;color:var(--ink-soft);border-bottom:2.5px solid transparent;white-space:nowrap}
+nav.tabs button.on{color:var(--navy);border-color:var(--orange)}
+
+main{padding:20px;max-width:1180px;margin:0 auto}
+.panel{display:none}
+.panel.on{display:block}
+
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+.tile .lab{font-size:12.5px;color:var(--ink-soft)}
+.tile .num{font-family:Poppins;font-weight:600;font-size:26px;color:var(--navy);margin:4px 0}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);margin-bottom:18px}
+.card h2{font-size:15px;margin:0 0 4px;color:var(--navy)}
+.card .sub{font-size:13px;color:var(--ink-soft);margin:0 0 14px}
+
+.prog-bar{display:flex;height:11px;border-radius:999px;overflow:hidden;background:var(--line);margin-bottom:12px}
+.prog-bar i{display:block;height:100%}
+.prog-legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--ink-soft)}
+.prog-legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:9px;height:9px;border-radius:3px;display:inline-block}
+
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:5px 13px;font-size:13px;font-weight:600;color:var(--ink)}
+.chip.on{background:var(--navy);border-color:var(--navy);color:#fff}
+select,input[type=search],input.cat{font-size:13px;padding:7px 11px;border:1.5px solid var(--line);border-radius:9px;background:#fff;color:var(--ink)}
+input[type=search]{min-width:200px;flex:1}
+input.cat{width:100%;min-width:9rem}
+
+.tbl-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px;max-height:68vh}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{position:sticky;top:0;background:#FBF3E7;text-align:left;font-weight:700;padding:9px 10px;border-bottom:1.5px solid var(--line);white-space:nowrap;color:var(--navy)}
+td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+td.nm{font-weight:600;min-width:10rem}
+tr:hover td{background:#FFFBF4}
+.hide-sm{display:table-cell}
+@media (max-width:760px){.hide-sm{display:none}}
+
+.pill{display:inline-block;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:600;border:1.5px solid currentColor}
+select.st{font-size:12.5px;padding:4px 8px;border-radius:999px;border-width:1.5px;font-weight:600}
+select.st.s-belum{border-color:var(--line);color:var(--ink-soft)}
+select.st.s-sudah{border-color:var(--warn);color:var(--warn);background:var(--warn-bg)}
+select.st.s-tertarik{border-color:var(--ok);color:var(--ok);background:var(--ok-bg)}
+select.st.s-menolak{border-color:var(--bad);color:var(--bad);background:var(--bad-bg)}
+.when{display:block;font-size:10.5px;color:var(--ink-soft);margin-top:2px}
+
+a.wa{display:inline-block;text-decoration:none;color:var(--ok);border:1.5px solid currentColor;border-radius:999px;padding:4px 12px;margin-right:6px;font-weight:600;font-size:12.5px}
+button.cp{font-size:12.5px;border:1.5px solid var(--line);background:#fff;color:var(--ink);border-radius:999px;padding:4px 11px}
+.acts{white-space:nowrap}
+
+textarea#tpl{width:100%;min-height:9rem;padding:12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;line-height:1.55;resize:vertical;background:#FFFDF9}
+code{font-size:12.5px;background:var(--cream);border:1px solid var(--line);border-radius:4px;padding:0 4px}
+
+.sk-head{font-size:15px;font-weight:700;color:var(--navy);margin:22px 0 10px}
+.sk-head:first-child{margin-top:0}
+.sk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:12px;margin-bottom:6px}
+.sk h3{font-size:14px;margin:0 0 3px}
+.sk .kapan{font-size:12px;color:var(--ink-soft);margin:0 0 8px}
+pre.skrip{white-space:pre-wrap;word-wrap:break-word;font-family:Inter;font-size:13px;line-height:1.55;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:12px;margin:0 0 8px}
+button.salin{font-size:12.5px;border:1.5px solid var(--line);background:#fff;color:var(--navy);border-radius:999px;padding:5px 13px;font-weight:600}
+button.salin.done{color:var(--ok);border-color:var(--ok)}
+
+.empty{color:var(--ink-soft);font-size:13px;padding:16px;text-align:center}
+.count{font-size:12.5px;color:var(--ink-soft);margin:0 0 8px}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-card">
+    <img src="logo-dopamilk.png" alt="Dopamilk">
+    <h1>Mitra PNDI · Dopa</h1>
+    <p class="sub">Masuk dengan akun admin Dopa kamu</p>
+    <div id="login-err" class="login-err hidden"></div>
+    <form id="login-form">
+      <div class="field"><label for="li-email">Email</label><input id="li-email" type="email" required autocomplete="username"></div>
+      <div class="field"><label for="li-pass">Password</label><input id="li-pass" type="password" required autocomplete="current-password"></div>
+      <button class="btn-primary" type="submit" id="li-btn">Masuk</button>
+    </form>
+    <p class="login-note">Lupa password? Hubungi AL untuk direset lewat Supabase.</p>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <header class="top">
+    <img src="logo-dopamilk.png" alt="Dopamilk">
+    <div class="title">Mitra PNDI<small id="hdr-sub">Gelombang 6–13 · Admin Dopa</small></div>
+    <span class="sync off" id="sync-badge"><span class="dot"></span><span id="sync-text">Menghubungkan…</span></span>
+    <button class="logout" id="btn-logout">Keluar</button>
+  </header>
+
+  <nav class="tabs">
+    <button data-tab="ringkasan" class="on">Ringkasan</button>
+    <button data-tab="gel">Per gelombang</button>
+    <button data-tab="unik">Kontak unik</button>
+    <button data-tab="skrip">Skrip chat</button>
+  </nav>
+
+  <main>
+    <section class="panel on" data-panel="ringkasan">
+      <div class="tiles">
+        <div class="tile"><div class="lab">Kontak unik (orang)</div><div class="num" id="t-unik">—</div></div>
+        <div class="tile"><div class="lab">Total tugas kelompok</div><div class="num" id="t-tugas">—</div></div>
+        <div class="tile"><div class="lab">Musyrif (putra)</div><div class="num" id="t-putra">—</div></div>
+        <div class="tile"><div class="lab">Musyrifah (putri)</div><div class="num" id="t-putri">—</div></div>
+      </div>
+      <div class="card">
+        <h2>Progres kontak admin</h2>
+        <p class="sub">Dihitung per orang. Semua admin (Mindop, Naib, Fitri) melihat angka yang sama secara langsung.</p>
+        <div id="progres"></div>
+      </div>
+      <div class="card">
+        <h2>Musyrif/ah per gelombang</h2>
+        <p class="sub">Biru = putra, oranye = putri. Klik batang untuk menyaring tab "Per gelombang" ke gelombang itu.</p>
+        <div id="chart-wrap" style="overflow:auto"></div>
+      </div>
+    </section>
+
+    <section class="panel" data-panel="gel">
+      <div class="card">
+        <h2>Template pesan WhatsApp</h2>
+        <p class="sub">Tombol <b>Chat WA</b> di bawah otomatis mengisi pesan ini dan mengubah status jadi "Sudah dihubungi". <code>{nama}</code>, <code>{gelombang}</code>, <code>{tanggal}</code>, <code>{kelompok}</code> terisi otomatis.</p>
+        <textarea id="tpl">Assalamu’alaikum warahmatullah, Kak {nama} 😊
+
+Perkenalkan, saya admin Dopamilku (Dopa). Kami dapat info Kakak bertugas sebagai musyrif/ah PNDI Gelombang {gelombang} ({tanggal}), Halaqoh {kelompok}. Semoga lancar dan berkah tugasnya ya, Kak 🤲
+
+Kami ingin menawarkan kerja sama sederhana: jadi *Mitra Dopa* selama PNDI. Sifatnya sukarela, tanpa paksaan. Tugasnya cukup share poster menu Dopa ke grup halaqoh tiap sore, lalu teruskan pesanan anggota ke kami. Sebagai terima kasih, setiap 7 cup pesanan dari halaqoh Kakak, Kakak dapat *1 cup Dopa gratis* (semua varian reguler) 🎁
+
+Kalau Kakak berkenan, boleh kami jelaskan detailnya? Kalau belum bisa juga tidak apa-apa kok, Kak 🙏</textarea>
+      </div>
+      <div class="controls">
+        <div class="chips" id="gel-chips"></div>
+        <select id="f-jenis"><option value="">Putra &amp; putri</option><option value="Putra">Putra saja</option><option value="Putri">Putri saja</option></select>
+        <select id="f-status"><option value="">Semua status</option><option>Belum dihubungi</option><option>Sudah dihubungi</option><option>Tertarik</option><option>Menolak</option></select>
+        <input type="search" id="f-cari" placeholder="Cari nama, NIM, prodi…">
+      </div>
+      <p class="count"><b id="c-gel">0</b> tugas kelompok ditampilkan</p>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Gel</th><th>Kelompok</th><th class="hide-sm">Kelas</th><th>Nama</th><th>P/P</th><th class="hide-sm">Prodi</th><th>No. WA</th><th>Status</th><th>Hubungi</th></tr></thead>
+          <tbody id="tbl-gel"></tbody>
+        </table>
+        <p class="empty hidden" id="empty-gel">Tidak ada yang cocok dengan filter ini.</p>
+      </div>
+    </section>
+
+    <section class="panel" data-panel="unik">
+      <p class="sub" style="margin:0 0 10px">Satu baris per orang. Mengubah status di sini sama efeknya dengan di tab Per gelombang.</p>
+      <div class="controls">
+        <select id="fu-jenis"><option value="">Putra &amp; putri</option><option value="Putra">Putra saja</option><option value="Putri">Putri saja</option></select>
+        <select id="fu-status"><option value="">Semua status</option><option>Belum dihubungi</option><option>Sudah dihubungi</option><option>Tertarik</option><option>Menolak</option></select>
+        <input type="search" id="fu-cari" placeholder="Cari nama, NIM, prodi…">
+      </div>
+      <p class="count"><b id="c-unik">0</b> orang ditampilkan</p>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Nama</th><th>P/P</th><th>Gelombang</th><th class="hide-sm">Kelompok</th><th class="hide-sm">Prodi</th><th>No. WA</th><th>Status</th><th>Catatan</th><th>Hubungi</th></tr></thead>
+          <tbody id="tbl-unik"></tbody>
+        </table>
+        <p class="empty hidden" id="empty-unik">Tidak ada yang cocok dengan pencarian ini.</p>
+      </div>
+    </section>
+
+    <section class="panel" data-panel="skrip">
+      <p class="sub" style="margin:0 0 14px">Pilih musyrif/ah dulu supaya <code>{nama}</code>, <code>{gelombang}</code>, <code>{tanggal}</code>, <code>{kelompok}</code> terisi otomatis saat Salin. Bagian [kurung siku] diisi manual.</p>
+      <select id="sk-orang" style="margin-bottom:18px;width:100%;max-width:420px"></select>
+      <div id="skrip-body"></div>
+    </section>
+  </main>
+</div>
+
+<script>
+const SUPABASE_URL = "https://yrueytrwccntexeodjin.supabase.co";
+const SUPABASE_KEY = "sb_publishable_KpMduxEIEpJfG3pxqbUzuQ_XZub2pps";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const STATUS = ['Belum dihubungi','Sudah dihubungi','Tertarik','Menolak'];
+const ST_CLASS = {'Belum dihubungi':'s-belum','Sudah dihubungi':'s-sudah','Tertarik':'s-tertarik','Menolak':'s-menolak'};
+const ST_COLOR = {'Belum dihubungi':'#B9ADA0','Sudah dihubungi':'#F5A524','Tertarik':'#1E8E5A','Menolak':'#C2403A'};
+const fmtN = (n) => new Intl.NumberFormat('id-ID').format(n);
+
+const state = {
+  gel: 'all', jenis: '', status: '', q: '',
+  jenisU: '', statusU: '', qU: '',
+  gelombang: [], musyrif: [], penugasan: [], kontak: new Map(),
+  rows: [], unik: [], orang: '', meEmail: ''
+};
+
+/* ---------------- LOGIN ---------------- */
+const $ = (sel, root=document) => root.querySelector(sel);
+const $$ = (sel, root=document) => [...root.querySelectorAll(sel)];
+
+function showErr(msg){ const e = $('#login-err'); e.textContent = msg; e.classList.remove('hidden'); }
+function hideErr(){ $('#login-err').classList.add('hidden'); }
+
+$('#login-form').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  hideErr();
+  const btn = $('#li-btn'); btn.disabled = true; btn.textContent = 'Memeriksa…';
+  const email = $('#li-email').value.trim();
+  const password = $('#li-pass').value;
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) {
+    showErr(error.message.includes('Invalid') ? 'Email atau password salah.' : error.message);
+    btn.disabled = false; btn.textContent = 'Masuk';
+    return;
+  }
+  await afterLogin();
+  btn.disabled = false; btn.textContent = 'Masuk';
+});
+
+async function afterLogin(){
+  const { data: isAdmin, error } = await sb.rpc('is_admin_dopa');
+  if (error || !isAdmin) {
+    showErr('Email ini belum terdaftar sebagai admin Dopa. Hubungi AL untuk ditambahkan.');
+    await sb.auth.signOut();
+    return;
+  }
+  const { data: { user } } = await sb.auth.getUser();
+  state.meEmail = user.email;
+  let nama = user.email;
+  try {
+    const { data: rowAdmin } = await sb.from('admin_dopa').select('nama').eq('email', user.email).maybeSingle();
+    if (rowAdmin && rowAdmin.nama) nama = rowAdmin.nama;
+  } catch(e) {}
+  $('#hdr-sub').textContent = 'Halo, ' + nama + ' · Gelombang 6–13';
+  $('#login-screen').classList.add('hidden');
+  $('#app').classList.remove('hidden');
+  await loadAll();
+  subscribeRealtime();
+}
+
+$('#btn-logout').addEventListener('click', async () => {
+  await sb.auth.signOut();
+  location.reload();
+});
+
+/* on load: check existing session */
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) await afterLogin();
+})();
+
+/* ---------------- DATA ---------------- */
+async function loadAll(){
+  const [{ data: gelombang, error: e1 }, { data: musyrif, error: e2 }, { data: penugasan, error: e3 }, { data: kontak, error: e4 }] = await Promise.all([
+    sb.from('pndi_gelombang').select('*').order('nomor'),
+    sb.from('pndi_musyrif').select('*'),
+    sb.from('pndi_penugasan').select('*'),
+    sb.from('pndi_kontak').select('*')
+  ]);
+  if (e1 || e2 || e3 || e4) { setSync(false, 'Gagal memuat data'); console.error(e1||e2||e3||e4); return; }
+  state.gelombang = gelombang; state.musyrif = musyrif; state.penugasan = penugasan;
+  state.kontak = new Map((kontak||[]).map(r => [r.nim, r]));
+  buildRows();
+  renderAll();
+  setSync(true, 'Status bersama tersambung');
+}
+
+function buildRows(){
+  const mByNim = new Map(state.musyrif.map(m => [m.nim, m]));
+  const gByNo = new Map(state.gelombang.map(g => [g.nomor, g]));
+  state.rows = state.penugasan.map(p => {
+    const m = mByNim.get(p.nim) || {};
+    const g = gByNo.get(p.gelombang) || {};
+    return { id: p.id, gelombang: p.gelombang, tanggal: g.tanggal || '', kelompok: p.halaqoh, kelas: p.kelas,
+      nama: m.nama, nim: p.nim, jenis: m.jenis, fakultas: m.fakultas, prodi: m.prodi, wa: m.wa };
+  }).sort((a,b) => a.gelombang - b.gelombang || String(a.kelompok).localeCompare(String(b.kelompok)));
+  const u = new Map();
+  for (const r of state.rows) {
+    if (!u.has(r.nim)) u.set(r.nim, { nim: r.nim, nama: r.nama, jenis: r.jenis, prodi: r.prodi, wa: r.wa, gels: [], kel: [] });
+    const o = u.get(r.nim); o.gels.push(r.gelombang); o.kel.push('G'+r.gelombang+'-'+r.kelompok);
+  }
+  state.unik = [...u.values()].map(o => ({ ...o, gelombang: o.gels.join(', '), kelompok: o.kel.join(', ') }))
+    .sort((a,b) => a.nama.localeCompare(b.nama));
+}
+
+function stOf(nim){ const v = state.kontak.get(nim); return v && STATUS.includes(v.status) ? v.status : 'Belum dihubungi'; }
+function infoOf(nim){ return state.kontak.get(nim) || {}; }
+
+async function setStatus(nim, status){
+  const { error } = await sb.from('pndi_kontak').upsert({ nim, status }, { onConflict: 'nim' });
+  if (error) throw error;
+}
+async function setCatatan(nim, catatan){
+  const { error } = await sb.from('pndi_kontak').upsert({ nim, catatan: catatan.slice(0,300) }, { onConflict: 'nim' });
+  if (error) throw error;
+}
+
+function subscribeRealtime(){
+  sb.channel('kontak-live').on('postgres_changes', { event: '*', schema: 'public', table: 'pndi_kontak' }, (payload) => {
+    if (payload.eventType === 'DELETE') state.kontak.delete(payload.old.nim);
+    else state.kontak.set(payload.new.nim, payload.new);
+    renderGel(); renderUnik(); renderProgres();
+  }).subscribe((status) => {
+    if (status === 'SUBSCRIBED') setSync(true, 'Status bersama tersambung');
+    else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') setSync(false, 'Terputus, muat ulang halaman');
+  });
+}
+
+function setSync(on, text){
+  const b = $('#sync-badge'); b.classList.toggle('off', !on);
+  $('#sync-text').textContent = text;
+}
+
+/* ---------------- TABS ---------------- */
+$$('nav.tabs button').forEach(b => b.addEventListener('click', () => {
+  $$('nav.tabs button').forEach(x => x.classList.toggle('on', x === b));
+  $$('.panel').forEach(p => p.classList.toggle('on', p.dataset.panel === b.dataset.tab));
+}));
+function goTab(name){
+  $$('nav.tabs button').forEach(x => x.classList.toggle('on', x.dataset.tab === name));
+  $$('.panel').forEach(p => p.classList.toggle('on', p.dataset.panel === name));
+}
+
+/* ---------------- RENDER: ringkasan ---------------- */
+function renderAll(){ renderTiles(); renderProgres(); renderChart(); renderChips(); renderGel(); renderUnik(); renderSkrip(); }
+
+function renderTiles(){
+  $('#t-unik').textContent = fmtN(state.unik.length);
+  $('#t-tugas').textContent = fmtN(state.rows.length);
+  $('#t-putra').textContent = fmtN(state.unik.filter(r => r.jenis==='Putra').length);
+  $('#t-putri').textContent = fmtN(state.unik.filter(r => r.jenis==='Putri').length);
+}
+
+function renderProgres(){
+  const el = $('#progres'); el.innerHTML = '';
+  const total = state.unik.length;
+  const counts = Object.fromEntries(STATUS.map(s => [s,0]));
+  state.unik.forEach(r => counts[stOf(r.nim)]++);
+  const bar = document.createElement('div'); bar.className = 'prog-bar';
+  STATUS.forEach(s => { if(!counts[s]) return; const i=document.createElement('i'); i.style.width=(counts[s]/total*100)+'%'; i.style.background=ST_COLOR[s]; i.title=s; bar.appendChild(i); });
+  const leg = document.createElement('div'); leg.className = 'prog-legend';
+  STATUS.forEach(s => { const sp=document.createElement('span'); const sw=document.createElement('i'); sw.className='sw'; sw.style.background=ST_COLOR[s]; sp.append(sw, document.createTextNode(s+': '+fmtN(counts[s]))); leg.appendChild(sp); });
+  el.append(bar, leg);
+}
+
+function renderChart(){
+  const wrap = $('#chart-wrap'); wrap.innerHTML = '';
+  const byGel = new Map();
+  state.rows.forEach(r => { if(!byGel.has(r.gelombang)) byGel.set(r.gelombang,{putra:0,putri:0,tanggal:r.tanggal}); const o=byGel.get(r.gelombang); if(r.jenis==='Putra')o.putra++; else o.putri++; });
+  const data = [...byGel.entries()].sort((a,b)=>a[0]-b[0]);
+  const max = Math.max(...data.map(([,o])=>o.putra+o.putri),1);
+  const svgW = Math.max(480, data.length*64), svgH = 220, bw = 30;
+  let svg = `<svg width="100%" viewBox="0 0 ${svgW} ${svgH}" style="min-width:${svgW}px">`;
+  data.forEach(([g,o],i) => {
+    const total = o.putra+o.putri, x = 24+i*64;
+    const hPutra = (o.putra/max)*160, hPutri = (o.putri/max)*160;
+    const baseY = svgH-34;
+    const yPutra = baseY-hPutra;
+    const yPutri = yPutra-hPutri;
+    svg += `<g style="cursor:pointer" data-g="${g}">
+      <rect x="${x}" y="${yPutra}" width="${bw}" height="${hPutra}" fill="var(--navy)" rx="2"></rect>
+      <rect x="${x}" y="${yPutri}" width="${bw}" height="${hPutri}" fill="var(--orange)" rx="2"></rect>
+      <text x="${x+bw/2}" y="${yPutri-6}" text-anchor="middle" font-size="11" fill="var(--navy)" font-weight="700">${total}</text>
+      <text x="${x+bw/2}" y="${svgH-14}" text-anchor="middle" font-size="11" fill="var(--ink-soft)">Gel ${g}</text>
+    </g>`;
+  });
+  svg += `</svg>`;
+  wrap.innerHTML = svg;
+  $$('g[data-g]', wrap).forEach(g => g.addEventListener('click', () => {
+    state.gel = g.dataset.g; renderChips(); renderGel(); goTab('gel');
+    document.querySelector('main').scrollIntoView({behavior:'smooth'});
+  }));
+}
+
+function renderChips(){
+  const box = $('#gel-chips'); box.innerHTML = '';
+  const mk = (val,label) => { const b=document.createElement('button'); b.className='chip'+(state.gel===val?' on':''); b.textContent=label; b.addEventListener('click',()=>{state.gel=val; renderChips(); renderGel();}); return b; };
+  box.appendChild(mk('all','Semua'));
+  state.gelombang.forEach(g => box.appendChild(mk(String(g.nomor), 'Gel '+g.nomor)));
+}
+
+/* ---------------- RENDER: tables ---------------- */
+function waLink(r){
+  const tpl = $('#tpl').value;
+  const text = tpl.replaceAll('{nama}', r.nama).replaceAll('{gelombang}', r.gelombang).replaceAll('{tanggal}', r.tanggal).replaceAll('{kelompok}', r.kelompok);
+  return 'https://wa.me/' + r.wa + '?text=' + encodeURIComponent(text);
+}
+function cocok(r,q){ q=q.toLowerCase(); return !q || [r.nama,r.nim,r.prodi,r.kelompok,r.wa].join(' ').toLowerCase().includes(q); }
+
+function statusSelect(nim){
+  const sel = document.createElement('select'); sel.className = 'st ' + ST_CLASS[stOf(nim)];
+  STATUS.forEach(s => sel.appendChild(new Option(s,s)));
+  sel.value = stOf(nim);
+  sel.addEventListener('change', async () => {
+    const v = sel.value, prev = stOf(nim); sel.disabled = true;
+    try { await setStatus(nim, v); state.kontak.set(nim, {...infoOf(nim), status:v}); sel.className='st '+ST_CLASS[v]; renderProgres(); }
+    catch(e){ sel.value = prev; alert('Gagal menyimpan status: ' + e.message); }
+    sel.disabled = false;
+  });
+  return sel;
+}
+function catatanInput(nim){
+  const inp = document.createElement('input'); inp.className='cat'; inp.type='text'; inp.placeholder='mis. follow up besok';
+  inp.value = infoOf(nim).catatan || '';
+  inp.addEventListener('change', async () => {
+    try { await setCatatan(nim, inp.value.trim()); state.kontak.set(nim, {...infoOf(nim), catatan: inp.value.trim()}); }
+    catch(e){ alert('Gagal menyimpan catatan: ' + e.message); }
+  });
+  return inp;
+}
+function waCell(r){
+  const td = document.createElement('td'); td.className='acts';
+  const a = document.createElement('a'); a.className='wa'; a.href=waLink(r); a.target='_blank'; a.rel='noopener'; a.textContent='Chat WA';
+  a.addEventListener('click', () => { if (stOf(r.nim)==='Belum dihubungi') setStatus(r.nim,'Sudah dihubungi').then(()=>{state.kontak.set(r.nim,{...infoOf(r.nim),status:'Sudah dihubungi'}); renderGel(); renderUnik(); renderProgres();}).catch(()=>{}); });
+  const btn = document.createElement('button'); btn.className='cp'; btn.type='button'; btn.textContent='Salin no.';
+  btn.addEventListener('click', async () => { try{ await navigator.clipboard.writeText(r.wa); btn.textContent='Tersalin ✓'; } catch(e){} setTimeout(()=>btn.textContent='Salin no.',1500); });
+  td.append(a, btn); return td;
+}
+function pillCell(jenis){ const td=document.createElement('td'); const p=document.createElement('span'); p.className='pill'; p.textContent=jenis; p.style.color = jenis==='Putra' ? 'var(--navy)' : 'var(--orange-dk)'; td.appendChild(p); return td; }
+function td(text,cls){ const e=document.createElement('td'); if(cls)e.className=cls; e.textContent=text==null?'':text; return e; }
+function whenSpan(nim){ const info=infoOf(nim); if(!info.diubah_pada) return null; const d=new Date(info.diubah_pada); if(isNaN(d))return null; const s=document.createElement('span'); s.className='when'; s.textContent='diubah '+d.toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}); return s; }
+
+function renderGel(){
+  const rows = state.rows.filter(r => (state.gel==='all'||String(r.gelombang)===String(state.gel)) && (!state.jenis||r.jenis===state.jenis) && (!state.status||stOf(r.nim)===state.status) && cocok(r,state.q));
+  $('#c-gel').textContent = fmtN(rows.length);
+  $('#empty-gel').classList.toggle('hidden', rows.length>0);
+  const tb = $('#tbl-gel'); tb.innerHTML='';
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.append(td(r.gelombang), td(r.kelompok), td(r.kelas,'hide-sm'), td(r.nama,'nm'), pillCell(r.jenis), td(r.prodi,'hide-sm'), td(r.wa));
+    const stTd = document.createElement('td'); const sel = statusSelect(r.nim); stTd.appendChild(sel); const w=whenSpan(r.nim); if(w) stTd.appendChild(w);
+    tr.appendChild(stTd); tr.appendChild(waCell(r));
+    tb.appendChild(tr);
+  });
+}
+function renderUnik(){
+  const rows = state.unik.filter(r => (!state.jenisU||r.jenis===state.jenisU) && (!state.statusU||stOf(r.nim)===state.statusU) && cocok(r,state.qU));
+  $('#c-unik').textContent = fmtN(rows.length);
+  $('#empty-unik').classList.toggle('hidden', rows.length>0);
+  const tb = $('#tbl-unik'); tb.innerHTML='';
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.append(td(r.nama,'nm'), pillCell(r.jenis), td(r.gelombang), td(r.kelompok,'hide-sm'), td(r.prodi,'hide-sm'), td(r.wa));
+    const stTd = document.createElement('td'); const sel = statusSelect(r.nim); stTd.appendChild(sel); const w=whenSpan(r.nim); if(w) stTd.appendChild(w);
+    tr.appendChild(stTd);
+    const catTd = document.createElement('td'); catTd.appendChild(catatanInput(r.nim)); tr.appendChild(catTd);
+    tr.appendChild(waCell(r));
+    tb.appendChild(tr);
+  });
+}
+
+$('#f-jenis').addEventListener('change', e => { state.jenis = e.target.value; renderGel(); });
+$('#f-status').addEventListener('change', e => { state.status = e.target.value; renderGel(); });
+$('#f-cari').addEventListener('input', e => { state.q = e.target.value; renderGel(); });
+$('#fu-jenis').addEventListener('change', e => { state.jenisU = e.target.value; renderUnik(); });
+$('#fu-status').addEventListener('change', e => { state.statusU = e.target.value; renderUnik(); });
+$('#fu-cari').addEventListener('input', e => { state.qU = e.target.value; renderUnik(); });
+$('#tpl').addEventListener('input', () => { renderGel(); renderUnik(); });
+
+/* ---------------- SKRIP CHAT ---------------- */
+const TAHAP = {1:'Tahap 1 · Menghubungi',2:'Tahap 2 · Respons',3:'Tahap 3 · Pertanyaan umum',4:'Tahap 4 · Operasional harian',5:'Tahap 5 · Reward & masalah',6:'Tahap 6 · Penutup'};
+const SKRIP = [
+[1,'Ajakan pertama','Kirim H-3 sampai H-1 sebelum gelombang dimulai.',
+`Assalamu’alaikum warahmatullah, Kak {nama} 😊
+
+Perkenalkan, saya [Nama Admin], admin Dopamilku (Dopa). Kami dapat info Kakak bertugas sebagai musyrif/ah PNDI Gelombang {gelombang} ({tanggal}), Halaqoh {kelompok}. Semoga lancar dan berkah tugasnya ya, Kak 🤲
+
+Kami ingin menawarkan kerja sama sederhana: jadi *Mitra Dopa* selama PNDI. Sifatnya sukarela, tanpa paksaan. Tugasnya cukup share poster menu Dopa ke grup halaqoh tiap sore, lalu teruskan pesanan anggota ke kami. Sebagai terima kasih, setiap 7 cup pesanan dari halaqoh Kakak, Kakak dapat *1 cup Dopa gratis* (semua varian reguler) 🎁
+
+Kalau Kakak berkenan, boleh kami jelaskan detailnya? Kalau belum bisa juga tidak apa-apa kok, Kak 🙏`],
+[1,'Follow-up kalau belum dibalas','Cukup sekali, sekitar 24 jam setelah ajakan pertama.',
+`Assalamu’alaikum Kak {nama}, mohon maaf mengganggu 🙏
+
+Mau follow up tawaran Mitra Dopa kemarin. Kalau Kakak tertarik, cukup balas *“Minat”*, nanti kami kirim detailnya. Kalau tidak, balas *“Skip”* saja, tidak apa-apa sama sekali kok 😊
+
+Jazakumullah khairan.`],
+[2,'Kalau tertarik: jelaskan mekanisme','Setelah mereka membalas minat atau bertanya detail. Ubah status jadi Tertarik.',
+`Alhamdulillah, terima kasih banyak Kak {nama} sudah berkenan 🤩 Berikut alurnya ya:
+
+1️⃣ *Share poster menu* (kami kirim tiap hari) ke grup Halaqoh {kelompok} setiap sore, sekitar pukul 16.30–18.30 WIB, selama PNDI berlangsung.
+
+2️⃣ *Kumpulkan pesanan* anggota halaqoh, lalu kirim ke admin Dopa mulai pukul 19.00, paling lambat 20.00 WIB.
+
+3️⃣ *Format pesanan:*
+Halaqoh {kelompok}
+1. Nama panggilan – nama menu
+2. Nama panggilan – nama menu
+
+4️⃣ *Pengantaran* ke rusunawa pukul 21.00–21.45 WIB. Mohon bantu arahkan anggota halaqoh mengambil pesanan di titik antar.
+
+💳 *Pembayaran:* hanya melalui *QRIS Dopa* (tidak menerima tunai). QRIS kami kirim bersama poster menu setiap hari.
+
+🎁 *Reward:* dihitung dari akumulasi pesanan halaqoh Kakak selama satu gelombang. Setiap kelipatan 7 cup = 1 cup Dopa gratis varian reguler (7 cup = 1 gratis, 14 cup = 2 gratis, dan seterusnya).
+
+Semua ini sukarela ya, Kak, tidak ada target. Ada yang mau ditanyakan dulu? 😊`],
+[2,'Konfirmasi resmi jadi mitra','Setelah mereka bilang setuju. Simpan nama halaqoh & jumlah anggota di kolom Catatan.',
+`Siap, Kak {nama}! Kakak resmi jadi *Mitra Dopa* PNDI Gelombang {gelombang} 🥳 Terima kasih banyak ya.
+
+Untuk catatan kami, boleh konfirmasi:
+• Nama halaqoh: Halaqoh {kelompok} (betul, Kak?)
+• Perkiraan jumlah anggota: ...
+
+Poster menu akan kami kirim setiap hari sebelum pukul 16.30. Semoga berkah untuk kita semua 🤲`],
+[2,'Kalau menolak','Balas dengan hangat, tutup percakapan, ubah status jadi Menolak.',
+`Wa’alaikumussalam, tidak apa-apa Kak {nama}, terima kasih sudah meluangkan waktu membalas 🙏
+
+Semoga lancar dan berkah tugasnya di PNDI Gelombang {gelombang}. Kalau sewaktu-waktu Kakak atau anggota halaqoh ingin pesan Dopa, kami tetap siap melayani. Kalau nanti berubah pikiran, kabari saja ya, Kak 😊`],
+[3,'FAQ: wajib share setiap hari?','',
+`Tidak wajib, Kak 😊 Kami sangat terbantu kalau bisa rutin tiap sore, tapi kalau ada hari Kakak berhalangan, tidak apa-apa. Cukup kabari kami saja ya.`],
+[3,'FAQ: kalau tidak ada yang pesan?','',
+`Tidak masalah sama sekali, Kak. Tidak ada target minimal pesanan. Kalau malam itu tidak ada pesanan, cukup balas “Nihil” saat kami ingatkan ya 🙏`],
+[3,'FAQ: bayarnya pakai apa?','',
+`Pembayaran hanya melalui *QRIS Dopa* ya, Kak (tidak menerima tunai), supaya pencatatannya rapi. QRIS-nya kami kirim bersama poster menu setiap sore 😊`],
+[3,'FAQ: reward dihitung bagaimana?','Akumulasi selama satu gelombang.',
+`Reward dihitung dari total cup pesanan Halaqoh {kelompok} selama satu gelombang PNDI. Setiap kelipatan 7 cup = 1 cup Dopa gratis varian reguler. Kami akan kirim rekap jumlah cup ke Kakak setiap selesai pengantaran, jadi Kakak bisa pantau 😊`],
+[3,'FAQ: cara klaim reward?','',
+`Reward bisa diklaim langsung saat pengantaran malam, Kak. Tinggal sebutkan varian reguler yang Kakak mau. Kalau belum sempat diklaim, otomatis kami ubah jadi voucher Dopa gratis yang berlaku 1 bulan ke depan 🎟️`],
+[3,'FAQ: kalau kirim pesanan lewat jam 20.00?','',
+`Batas kirim pesanan pukul 20.00 WIB supaya bisa diantar 21.00–21.45, Kak. Pesanan setelah itu kami usahakan, tapi belum tentu bisa diproses malam itu. Jadi lebih aman dikirim sebelum 20.00 ya 🙏`],
+[4,'Pengingat sore + poster','Setiap hari selama PNDI, sekitar pukul 16.15. Lampirkan poster menu + QRIS.',
+`Assalamu’alaikum Kak {nama} 😊
+
+Berikut poster menu dan QRIS Dopa hari ini ya. Mohon bantuannya di-share ke grup Halaqoh {kelompok} (sekitar 16.30–18.30 WIB).
+
+Pesanan ditunggu pukul 19.00–20.00 WIB. Jazakumullah khairan 🙏
+
+[lampirkan poster menu + QRIS Dopa]`],
+[4,'Pengingat batas pesanan','Sekitar pukul 19.30, hanya kalau rekap belum masuk.',
+`Kak {nama}, pengingat ya 🙏 Rekap pesanan Halaqoh {kelompok} ditunggu paling lambat pukul *20.00 WIB*.
+
+Formatnya:
+Halaqoh {kelompok}
+1. Nama panggilan – menu
+2. Nama panggilan – menu
+
+Kalau malam ini tidak ada pesanan, cukup balas *“Nihil”* ya, Kak 😊`],
+[4,'Pesanan diterima','Balas segera setelah rekap masuk dan sudah dicek.',
+`Pesanan Halaqoh {kelompok} sudah kami terima ✅
+
+Total: [jumlah] cup
+[ringkasan pesanan]
+
+In syaa Allah diantar ke titik antar rusunawa pukul 21.00–21.45 WIB. Mohon bantu arahkan anggota mengambil pesanan ya, Kak 🙏
+
+Akumulasi pesanan halaqoh Kakak: [total] cup → reward [n] cup gratis 🎁`],
+[4,'Pesanan sudah sampai','Saat kurir tiba di titik antar.',
+`Kak {nama}, pesanan Halaqoh {kelompok} sudah sampai di titik antar [lokasi] 🛵
+
+Mohon diinfokan ke anggota untuk mengambil sekarang ya. Terima kasih banyak!`],
+[4,'Pesanan masuk lewat 20.00','',
+`Mohon maaf Kak {nama}, pesanannya masuk setelah pukul 20.00 🙏 Kami cek dulu ya apakah masih bisa diproses malam ini.
+
+Kalau tidak memungkinkan, pesanan bisa dikirim lagi besok pukul 19.00–20.00 WIB.`],
+[5,'Reward tercapai','Setiap kali akumulasi menyentuh kelipatan 7 cup.',
+`MasyaAllah, Kak {nama}! 🎉 Pesanan Halaqoh {kelompok} sudah mencapai [total] cup, jadi Kakak dapat *[n] cup Dopa gratis* (varian reguler).
+
+Mau diklaim malam ini sekalian pengantaran? Tinggal sebutkan varian reguler pilihan Kakak. Kalau belum sempat, otomatis kami ubah jadi voucher yang berlaku 1 bulan ya 😊`],
+[5,'Reward jadi voucher','Kalau reward tidak diklaim saat pengantaran.',
+`Kak {nama}, reward [n] cup Dopa gratis Kakak sudah kami ubah jadi voucher ya 🎟️
+
+Kode voucher: [isi]
+Berlaku sampai: [tanggal, 1 bulan dari hari ini]
+Cara pakai: tunjukkan pesan ini ke admin Dopa saat memesan varian reguler.
+
+Terima kasih sudah jadi Mitra Dopa 🤍`],
+[5,'Penanganan komplain','Kalau ada pesanan kurang, salah, atau terlambat.',
+`Mohon maaf atas ketidaknyamanannya, Kak {nama} 🙏
+
+Boleh info nama pemesan dan kendalanya (pesanan kurang, salah, atau terlambat)? Kami cek dan selesaikan secepatnya.`],
+[6,'Penutup akhir gelombang','Hari terakhir gelombang, ke semua mitra.',
+`Assalamu’alaikum Kak {nama} 😊
+
+Alhamdulillah PNDI Gelombang {gelombang} sudah selesai. Terima kasih banyak sudah jadi Mitra Dopa! 🙏
+
+Rekap Halaqoh {kelompok}:
+• Total pesanan: [total] cup
+• Reward: [n] cup ([sudah diklaim / jadi voucher berlaku sampai ...])
+
+Semoga Allah membalas kebaikan Kakak. Kalau nanti bertugas lagi di gelombang berikutnya, kami senang sekali bisa bekerja sama lagi 🤍`],
+];
+
+function renderSkrip(){
+  const sel = $('#sk-orang'); sel.innerHTML='';
+  sel.appendChild(new Option('Isi skrip untuk… (biarkan untuk tetap pakai {nama})',''));
+  state.rows.forEach(r => sel.appendChild(new Option('Gel '+r.gelombang+' · Halaqoh '+r.kelompok+' · '+r.nama, r.id)));
+  sel.value = state.orang;
+  sel.addEventListener('change', () => { state.orang = sel.value; });
+
+  const body = $('#skrip-body'); body.innerHTML = '';
+  let curTahap = null, grid = null;
+  SKRIP.forEach((item, idx) => {
+    const [t, judul, kapan, teks] = item;
+    if (t !== curTahap) {
+      const h = document.createElement('h3'); h.className='sk-head'; h.textContent = TAHAP[t]; body.appendChild(h);
+      grid = document.createElement('div'); grid.className='sk-grid'; body.appendChild(grid);
+      curTahap = t;
+    }
+    const card = document.createElement('div'); card.className='card sk';
+    const h3 = document.createElement('h3'); h3.textContent = judul; card.appendChild(h3);
+    if (kapan) { const p = document.createElement('p'); p.className='kapan'; p.textContent = kapan; card.appendChild(p); }
+    const pre = document.createElement('pre'); pre.className='skrip'; pre.textContent = teks; card.appendChild(pre);
+    const btn = document.createElement('button'); btn.className='salin'; btn.type='button'; btn.textContent='Salin pesan';
+    btn.addEventListener('click', async () => {
+      let t2 = teks;
+      const r = state.rows.find(x => x.id === state.orang);
+      if (r) t2 = t2.replaceAll('{nama}', r.nama).replaceAll('{gelombang}', r.gelombang).replaceAll('{tanggal}', r.tanggal).replaceAll('{kelompok}', r.kelompok);
+      try { await navigator.clipboard.writeText(t2); btn.classList.add('done'); btn.textContent='Tersalin ✓'; setTimeout(()=>{btn.classList.remove('done'); btn.textContent='Salin pesan';},1500); } catch(e){}
+    });
+    card.appendChild(btn);
+    grid.appendChild(card);
+  });
+}
+</script>
+</body>
+</html>
