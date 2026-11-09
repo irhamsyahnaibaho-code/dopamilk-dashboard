@@ -70,6 +70,9 @@
     font-family:var(--font-head); font-weight:600; font-size:15px; background:var(--blue); color:#fff;
   }
   .avatar.alt{background:var(--yellow); color:var(--ink)}
+  .avatar{position:relative; overflow:hidden}
+  .avatar-img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center 25%; opacity:0; transition:opacity .2s}
+  .avatar-img.ok{opacity:1}
   .avatar.lg{width:56px; height:56px; font-size:20px}
   .avatar.sm{width:30px; height:30px; font-size:12px}
 
@@ -277,9 +280,33 @@ const idxOf = id => Math.max(0, state.profiles.findIndex(p => p.id === id));
 const isCeo = () => !!(state.me && state.me.is_ceo);
 const canEdit = ownerId => isCeo() || (state.me && state.me.id === ownerId);
 
+/* Foto profil: simpan di folder foto/ dengan nama depan huruf kecil, mis. foto/naib.jpg.
+   Kalau fotonya tidak ada, otomatis tampil inisial. */
+const PHOTO_DIR = 'foto/';
+const PHOTO_EXTS = ['jpg', 'jpeg', 'png', 'webp'];
+const photoCache = {};   // slug -> alamat foto yang berhasil, atau null kalau tidak ada
+const photoSlug = p => firstName(p.full_name).toLowerCase().replace(/[^a-z0-9]/g, '');
+
+function photoOk(img) {
+  photoCache[img.dataset.slug] = img.getAttribute('src');
+  img.classList.add('ok');
+}
+function photoNext(img) {
+  const i = Number(img.dataset.ext) + 1;
+  if (i < PHOTO_EXTS.length) { img.dataset.ext = i; img.src = PHOTO_DIR + img.dataset.slug + '.' + PHOTO_EXTS[i]; }
+  else { photoCache[img.dataset.slug] = null; img.remove(); }
+}
+
 function avatar(p, size = '') {
   const alt = idxOf(p.id) % 2 === 1 ? ' alt' : '';
-  return `<span class="avatar${alt} ${size}" aria-hidden="true">${esc(initials(p.full_name))}</span>`;
+  const slug = photoSlug(p);
+  let img = '';
+  if (slug && photoCache[slug] !== null) {
+    const known = photoCache[slug];
+    img = `<img class="avatar-img${known ? ' ok' : ''}" alt="" loading="lazy" data-slug="${slug}" data-ext="0"
+      src="${known || PHOTO_DIR + slug + '.' + PHOTO_EXTS[0]}" onload="photoOk(this)" onerror="photoNext(this)">`;
+  }
+  return `<span class="avatar${alt} ${size}" aria-hidden="true">${esc(initials(p.full_name))}${img}</span>`;
 }
 
 function toast(msg, type = '') {
