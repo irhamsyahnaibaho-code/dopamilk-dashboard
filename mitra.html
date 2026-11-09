@@ -172,6 +172,7 @@ button.mini.ghost{color:var(--bad);border-color:var(--bad-bg)}
     <button data-tab="unik">Kontak unik</button>
     <button data-tab="skrip">Skrip chat</button>
     <button data-tab="pesanan">Pesanan harian</button>
+    <button data-tab="laporan">Laporan</button>
   </nav>
 
   <main>
@@ -299,6 +300,48 @@ Kalau Kakak berkenan, boleh kami jelaskan detailnya? Kalau belum bisa juga tidak
         </div>
       </div>
     </section>
+
+    <section class="panel" data-panel="laporan">
+      <div class="controls">
+        <div class="chips" id="lap-gel-chips"></div>
+      </div>
+      <div class="tiles">
+        <div class="tile"><div class="lab">Total pesanan</div><div class="num" id="lap-t-pesanan">—</div></div>
+        <div class="tile"><div class="lab">Total cup</div><div class="num" id="lap-t-cup">—</div></div>
+        <div class="tile"><div class="lab">Total penjualan</div><div class="num" id="lap-t-rp">—</div></div>
+        <div class="tile"><div class="lab">Lunas QRIS / Belum bayar</div><div class="num" id="lap-t-bayar" style="font-size:18px">—</div></div>
+      </div>
+
+      <div class="card">
+        <h2>Penjualan per gelombang</h2>
+        <p class="sub">Total Rupiah per gelombang (semua halaqoh).</p>
+        <div id="lap-chart" style="overflow:auto"></div>
+      </div>
+
+      <div class="card">
+        <h2>Rekap per halaqoh</h2>
+        <p class="sub">Urut dari penjualan terbesar.</p>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Gel</th><th>Halaqoh</th><th class="hide-sm">Musyrif</th><th class="num">Cup</th><th class="num">Rp</th><th class="num">Lunas</th><th class="num">Belum</th></tr></thead>
+            <tbody id="tbl-lap-halaqoh"></tbody>
+          </table>
+          <p class="empty hidden" id="empty-lap-halaqoh">Belum ada data pesanan.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Menu terlaris</h2>
+        <p class="sub">Urut dari cup terjual terbanyak.</p>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Menu</th><th class="num">Cup terjual</th><th class="num">Rp</th></tr></thead>
+            <tbody id="tbl-lap-menu"></tbody>
+          </table>
+          <p class="empty hidden" id="empty-lap-menu">Belum ada data pesanan.</p>
+        </div>
+      </div>
+    </section>
   </main>
 </div>
 
@@ -393,6 +436,8 @@ async function loadAll(){
   initPesanan();
   await loadRewardView();
   await loadRiwayat();
+  renderLapChips();
+  await loadLaporan();
   setSync(true, 'Status bersama tersambung');
 }
 
@@ -436,7 +481,7 @@ function subscribeRealtime(){
     else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') setSync(false, 'Terputus, muat ulang halaman');
   });
   sb.channel('pesanan-live').on('postgres_changes', { event: '*', schema: 'public', table: 'pndi_pesanan' }, () => {
-    loadTodayList(); loadRewardView();
+    loadTodayList(); loadRewardView(); loadLaporan();
   }).subscribe();
   sb.channel('reward-live').on('postgres_changes', { event: '*', schema: 'public', table: 'pndi_reward' }, () => {
     loadRewardView(); loadRiwayat();
@@ -747,6 +792,14 @@ async function toggleDipakai(id, val){
   await loadRiwayat();
 }
 
+async function hapusReward(id, label){
+  if (!confirm('Hapus catatan reward ini (' + label + ')? Dipakai untuk membatalkan data salah catat/tes.')) return;
+  const { error } = await sb.from('pndi_reward').delete().eq('id', id);
+  if (error) { alert('Gagal menghapus: ' + error.message); return; }
+  await loadRiwayat();
+  await loadRewardView();
+}
+
 function renderRiwayat(){
   const tb = $('#tbl-riwayat'); tb.innerHTML = '';
   const rows = state.riwayat || [];
@@ -762,11 +815,15 @@ function renderRiwayat(){
     if (r.jenis === 'Voucher') { kTd.innerHTML = '<b>' + (r.kode_voucher||'—') + '</b>'; const sm=document.createElement('div'); sm.className='when'; sm.textContent = r.berlaku_sampai ? ('s.d. '+r.berlaku_sampai) : ''; kTd.appendChild(sm); }
     else { kTd.textContent = '—'; }
     tr.appendChild(kTd);
-    const sTd = document.createElement('td');
+    const sTd = document.createElement('td'); sTd.className = 'acts';
     if (r.jenis === 'Voucher') {
       if (r.dipakai) { const b=document.createElement('span'); b.className='pill'; b.style.color='var(--ink-soft)'; b.textContent='Sudah dipakai'; sTd.appendChild(b); }
       else { const btn=document.createElement('button'); btn.className='mini primary'; btn.type='button'; btn.textContent='Tandai sudah dipakai'; btn.addEventListener('click', () => toggleDipakai(r.id, true)); sTd.appendChild(btn); }
-    } else { sTd.textContent = '—'; }
+    }
+    const delBtn = document.createElement('button'); delBtn.className='mini ghost'; delBtn.type='button'; delBtn.textContent='Hapus';
+    delBtn.style.marginLeft = r.jenis==='Voucher' ? '4px' : '0';
+    delBtn.addEventListener('click', () => hapusReward(r.id, (r.kode_voucher || r.jenis) + ' · ' + (info.nama||'')));
+    sTd.appendChild(delBtn);
     tr.appendChild(sTd);
     tb.appendChild(tr);
   });
@@ -778,7 +835,7 @@ function renderReward(){
   $('#empty-reward').classList.toggle('hidden', rows.length>0);
   rows.forEach(r => {
     const tr = document.createElement('tr');
-    tr.append(td(r.gelombang), td(r.halaqoh), td(r.musyrif,'hide-sm'), td(r.total_cup,'num'), td(r.reward_sisa,'num'));
+    tr.append(td(r.gelombang), td(r.halaqoh), td(r.musyrif,'hide-sm'), td(r.total_cup,'num'), td(Math.max(0,r.reward_sisa),'num'));
     const pTd = document.createElement('td');
     const pct = Math.round(((r.total_cup % 7) / 7) * 100);
     const bar = document.createElement('span'); bar.className='reward-bar';
@@ -798,6 +855,97 @@ function renderReward(){
     } else { aTd.textContent = '—'; }
     tr.appendChild(aTd);
     tb.appendChild(tr);
+  });
+}
+
+/* ---------------- LAPORAN ---------------- */
+state.lapGel = 'all';
+state.lapPesanan = [];
+
+function renderLapChips(){
+  const box = $('#lap-gel-chips'); box.innerHTML = '';
+  const mk = (val,label) => { const b=document.createElement('button'); b.className='chip'+(state.lapGel===val?' on':''); b.textContent=label; b.addEventListener('click',()=>{state.lapGel=val; renderLapChips(); renderLaporan();}); return b; };
+  box.appendChild(mk('all','Semua gelombang'));
+  state.gelombang.forEach(g => box.appendChild(mk(String(g.nomor), 'Gel '+g.nomor)));
+}
+
+async function loadLaporan(){
+  const { data, error } = await sb.from('pndi_pesanan').select('*').limit(5000);
+  if (error) { console.error(error); return; }
+  state.lapPesanan = data || [];
+  renderLaporan();
+}
+
+function renderLaporan(){
+  const infoOfPenugasan = (id) => state.rows.find(r => r.id === id);
+  const menuMap = new Map(state.menuAll.map(m => [m.id, m]));
+  const rows = state.lapPesanan.filter(p => {
+    if (state.lapGel === 'all') return true;
+    const info = infoOfPenugasan(p.penugasan_id);
+    return info && String(info.gelombang) === String(state.lapGel);
+  });
+
+  let totalCup = 0, totalRp = 0, lunas = 0, belum = 0;
+  const byHalaqoh = new Map(), byGel = new Map(), byMenu = new Map();
+
+  rows.forEach(p => {
+    const m = menuMap.get(p.menu_id) || {};
+    const rp = (m.harga||0) * p.jumlah;
+    totalCup += p.jumlah; totalRp += rp;
+    if (p.bayar === 'Lunas QRIS') lunas++; else belum++;
+
+    const info = infoOfPenugasan(p.penugasan_id) || {};
+    if (!byHalaqoh.has(p.penugasan_id)) byHalaqoh.set(p.penugasan_id, { gelombang: info.gelombang, kelompok: info.kelompok, nama: info.nama, cup:0, rp:0, lunas:0, belum:0 });
+    const h = byHalaqoh.get(p.penugasan_id); h.cup += p.jumlah; h.rp += rp; if (p.bayar==='Lunas QRIS') h.lunas += p.jumlah; else h.belum += p.jumlah;
+
+    const g = info.gelombang;
+    if (g != null) { if (!byGel.has(g)) byGel.set(g, { cup:0, rp:0 }); const gg = byGel.get(g); gg.cup += p.jumlah; gg.rp += rp; }
+
+    if (!byMenu.has(p.menu_id)) byMenu.set(p.menu_id, { nama: m.nama || 'Menu dihapus', cup:0, rp:0 });
+    const mm = byMenu.get(p.menu_id); mm.cup += p.jumlah; mm.rp += rp;
+  });
+
+  $('#lap-t-pesanan').textContent = fmtN(rows.length);
+  $('#lap-t-cup').textContent = fmtN(totalCup);
+  $('#lap-t-rp').textContent = 'Rp' + fmtN(totalRp);
+  $('#lap-t-bayar').textContent = fmtN(lunas) + ' / ' + fmtN(belum);
+
+  /* chart per gelombang */
+  const chartBox = $('#lap-chart'); chartBox.innerHTML = '';
+  const gelData = [...byGel.entries()].sort((a,b) => a[0]-b[0]);
+  if (gelData.length === 0) { chartBox.innerHTML = '<p class="empty">Belum ada data pesanan.</p>'; }
+  else {
+    const max = Math.max(...gelData.map(([,o])=>o.rp), 1);
+    const svgW = Math.max(480, gelData.length*72), svgH = 210, bw = 34;
+    let svg = `<svg width="100%" viewBox="0 0 ${svgW} ${svgH}" style="min-width:${svgW}px">`;
+    gelData.forEach(([g,o],i) => {
+      const x = 26+i*72, h = (o.rp/max)*150, y = svgH-34-h;
+      svg += `<g><rect x="${x}" y="${y}" width="${bw}" height="${h}" fill="var(--navy)" rx="3"></rect>
+        <text x="${x+bw/2}" y="${y-8}" text-anchor="middle" font-size="11" fill="var(--navy)" font-weight="700">Rp${fmtN(o.rp)}</text>
+        <text x="${x+bw/2}" y="${svgH-14}" text-anchor="middle" font-size="11" fill="var(--ink-soft)">Gel ${g}</text></g>`;
+    });
+    svg += `</svg>`;
+    chartBox.innerHTML = svg;
+  }
+
+  /* per halaqoh table */
+  const tbH = $('#tbl-lap-halaqoh'); tbH.innerHTML = '';
+  const halRows = [...byHalaqoh.values()].sort((a,b) => b.rp - a.rp);
+  $('#empty-lap-halaqoh').classList.toggle('hidden', halRows.length > 0);
+  halRows.forEach(h => {
+    const tr = document.createElement('tr');
+    tr.append(td(h.gelombang), td(h.kelompok), td(h.nama,'hide-sm'), td(h.cup,'num'), td('Rp'+fmtN(h.rp),'num'), td(h.lunas,'num'), td(h.belum,'num'));
+    tbH.appendChild(tr);
+  });
+
+  /* menu terlaris table */
+  const tbM = $('#tbl-lap-menu'); tbM.innerHTML = '';
+  const menuRows = [...byMenu.values()].sort((a,b) => b.cup - a.cup);
+  $('#empty-lap-menu').classList.toggle('hidden', menuRows.length > 0);
+  menuRows.forEach(m => {
+    const tr = document.createElement('tr');
+    tr.append(td(m.nama,'nm'), td(m.cup,'num'), td('Rp'+fmtN(m.rp),'num'));
+    tbM.appendChild(tr);
   });
 }
 
