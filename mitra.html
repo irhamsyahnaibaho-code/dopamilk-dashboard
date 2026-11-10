@@ -9,6 +9,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf-autotable.min.js"></script>
 <style>
 :root{
   --navy:#17275E; --navy-2:#223784; --orange:#F5A524; --orange-dk:#D98A0E;
@@ -139,6 +141,28 @@ button.mini.ghost{color:var(--bad);border-color:var(--bad-bg)}
 .msg-err{background:var(--bad-bg);color:var(--bad);border-radius:8px;padding:9px 12px;font-size:13px;margin-top:10px}
 .reward-bar{width:90px;height:8px;background:var(--line);border-radius:999px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:6px}
 .reward-bar i{display:block;height:100%;background:var(--ok)}
+
+/* ---------- penjualan ---------- */
+.seg{display:inline-flex;background:var(--cream);border:1.5px solid var(--line);border-radius:999px;padding:3px;gap:2px}
+.seg button{border:none;background:none;border-radius:999px;padding:7px 15px;font-size:13px;font-weight:700;color:var(--ink-soft)}
+.seg button.on{background:var(--navy);color:#fff}
+.pj-form{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;align-items:end}
+.pj-form .f{display:flex;flex-direction:column;gap:4px}
+.pj-form label{font-size:12px;font-weight:600;color:var(--navy)}
+.pj-form select,.pj-form input{width:100%;font-size:13px;padding:8px 10px;border:1.5px solid var(--line);border-radius:9px;background:#fff}
+.pj-form .f.wide{grid-column:span 2}
+@media (max-width:900px){.pj-form{grid-template-columns:repeat(2,1fr)}.pj-form .f.wide{grid-column:span 2}}
+.chtag{display:inline-block;border-radius:7px;padding:2px 8px;font-size:11.5px;font-weight:700}
+.chtag.outlet{background:#E7F0FB;color:#1C5DA6}
+.chtag.event{background:#F3E8FB;color:#7A2FB0}
+.chtag.mitra{background:var(--ok-bg);color:var(--ok)}
+.addch{display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-top:4px}
+.addch .f{display:flex;flex-direction:column;gap:4px}
+.addch label{font-size:12px;font-weight:600;color:var(--navy)}
+.addch select,.addch input{font-size:13px;padding:7px 10px;border:1.5px solid var(--line);border-radius:9px;background:#fff}
+button.btn-sm{background:var(--navy);color:#fff;border:none;border-radius:9px;padding:8px 16px;font-size:13px;font-weight:700}
+button.btn-sm.ghost{background:#fff;color:var(--navy);border:1.5px solid var(--line)}
+button.btn-sm:disabled{opacity:.55}
 </style>
 </head>
 <body>
@@ -173,6 +197,7 @@ button.mini.ghost{color:var(--bad);border-color:var(--bad-bg)}
     <button data-tab="skrip">Skrip chat</button>
     <button data-tab="pesanan">Pesanan harian</button>
     <button data-tab="laporan">Laporan</button>
+    <button data-tab="penjualan">Penjualan</button>
   </nav>
 
   <main>
@@ -342,6 +367,85 @@ Kalau Kakak berkenan, boleh kami jelaskan detailnya? Kalau belum bisa juga tidak
         </div>
       </div>
     </section>
+
+    <section class="panel" data-panel="penjualan">
+      <div class="card">
+        <h2>Catat penjualan</h2>
+        <p class="sub">Catat penjualan harian di Outlet, Event yang diikuti, atau Mitra (mis. Kantin Salman).</p>
+        <div class="pj-form">
+          <div class="f"><label>Channel</label>
+            <select id="pj-tipe">
+              <option value="outlet">Outlet</option>
+              <option value="event">Event</option>
+              <option value="mitra">Mitra</option>
+            </select>
+          </div>
+          <div class="f wide"><label>Nama channel</label><select id="pj-channel"></select></div>
+          <div class="f"><label>Tanggal</label><input type="date" id="pj-tanggal"></div>
+          <div class="f wide"><label>Menu</label><select id="pj-menu"></select></div>
+          <div class="f"><label>Jumlah (cup)</label><input type="number" id="pj-jumlah" min="1" value="1"></div>
+          <div class="f"><label>Bayar</label>
+            <select id="pj-bayar"><option>QRIS</option><option>Tunai</option><option>Lainnya</option></select>
+          </div>
+          <div class="f wide"><label>Catatan (opsional)</label><input type="text" id="pj-catatan" placeholder="mis. event Rockataini hari ke-2"></div>
+          <div class="f"><button type="button" class="btn-sm" id="pj-submit" style="width:100%">Simpan</button></div>
+        </div>
+        <div id="pj-msg"></div>
+      </div>
+
+      <div class="card">
+        <h2>Kelola channel</h2>
+        <p class="sub">Tambah nama outlet, event, atau mitra baru supaya muncul di pilihan form di atas.</p>
+        <div class="addch">
+          <div class="f"><label>Channel</label>
+            <select id="ch-tipe"><option value="outlet">Outlet</option><option value="event">Event</option><option value="mitra">Mitra</option></select>
+          </div>
+          <div class="f"><label>Nama</label><input type="text" id="ch-nama" placeholder="mis. Outlet Gejayan"></div>
+          <button type="button" class="btn-sm ghost" id="ch-submit">+ Tambah channel</button>
+        </div>
+        <div id="ch-msg"></div>
+        <div class="tbl-wrap" style="margin-top:14px;max-height:30vh">
+          <table>
+            <thead><tr><th>Channel</th><th>Nama</th><th>Status</th><th></th></tr></thead>
+            <tbody id="tbl-channel"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Rentang laporan</h2>
+        <div class="controls" style="margin-bottom:0">
+          <div class="seg" id="pj-rentang">
+            <button data-r="harian" class="on">Harian</button>
+            <button data-r="mingguan">Mingguan</button>
+            <button data-r="bulanan">Bulanan</button>
+          </div>
+          <input type="date" id="pj-anchor">
+          <span id="pj-range-label" style="font-size:13px;color:var(--ink-soft);font-weight:600"></span>
+          <span style="flex:1"></span>
+          <button type="button" class="btn-sm" id="pj-pdf">⬇ Download PDF</button>
+        </div>
+      </div>
+
+      <div class="tiles">
+        <div class="tile"><div class="lab">Total transaksi</div><div class="num" id="pj-t-trx">—</div></div>
+        <div class="tile"><div class="lab">Total cup</div><div class="num" id="pj-t-cup">—</div></div>
+        <div class="tile"><div class="lab">Total penjualan</div><div class="num" id="pj-t-rp">—</div></div>
+        <div class="tile"><div class="lab">Outlet / Event / Mitra</div><div class="num" id="pj-t-split" style="font-size:16px">—</div></div>
+      </div>
+
+      <div class="card">
+        <h2>Rincian penjualan</h2>
+        <p class="sub" id="pj-rincian-sub">Sesuai rentang yang dipilih di atas.</p>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Tanggal</th><th>Channel</th><th class="hide-sm">Nama</th><th>Menu</th><th class="num">Jml</th><th class="num hide-sm">Rp</th><th class="hide-sm">Bayar</th><th></th></tr></thead>
+            <tbody id="tbl-pj"></tbody>
+          </table>
+          <p class="empty hidden" id="empty-pj">Belum ada penjualan tercatat di rentang ini.</p>
+        </div>
+      </div>
+    </section>
   </main>
 </div>
 
@@ -394,6 +498,7 @@ async function afterLogin(){
   }
   const { data: { user } } = await sb.auth.getUser();
   state.meEmail = user.email;
+  state.authUserId = user.id;
   let nama = user.email;
   try {
     const { data: rowAdmin } = await sb.from('admin_dopa').select('nama').eq('email', user.email).maybeSingle();
@@ -438,6 +543,7 @@ async function loadAll(){
   await loadRiwayat();
   renderLapChips();
   await loadLaporan();
+  await initPenjualan();
   setSync(true, 'Status bersama tersambung');
 }
 
@@ -485,6 +591,12 @@ function subscribeRealtime(){
   }).subscribe();
   sb.channel('reward-live').on('postgres_changes', { event: '*', schema: 'public', table: 'pndi_reward' }, () => {
     loadRewardView(); loadRiwayat();
+  }).subscribe();
+  sb.channel('penjualan-live').on('postgres_changes', { event: '*', schema: 'public', table: 'penjualan_harian' }, () => {
+    loadPenjualan().then(renderPenjualan);
+  }).subscribe();
+  sb.channel('channel-live').on('postgres_changes', { event: '*', schema: 'public', table: 'sales_channels' }, () => {
+    loadChannels().then(() => { renderChannelTable(); fillChannelSelect(); });
   }).subscribe();
 }
 
@@ -947,6 +1059,256 @@ function renderLaporan(){
     tr.append(td(m.nama,'nm'), td(m.cup,'num'), td('Rp'+fmtN(m.rp),'num'));
     tbM.appendChild(tr);
   });
+}
+
+/* ---------------- PENJUALAN HARIAN (Outlet / Event / Mitra) ---------------- */
+state.channels = [];
+state.penjualan = [];
+state.pjTipe = 'outlet';
+state.pjRentang = 'harian';
+state.pjAnchor = new Date().toISOString().slice(0,10);
+
+async function loadChannels(){
+  const { data, error } = await sb.from('sales_channels').select('*').order('tipe').order('nama');
+  if (error) { console.error(error); return; }
+  state.channels = data || [];
+}
+async function loadPenjualan(){
+  const { data, error } = await sb.from('penjualan_harian').select('*').order('tanggal', { ascending:false }).limit(5000);
+  if (error) { console.error(error); return; }
+  state.penjualan = data || [];
+}
+
+function fillChannelSelect(){
+  const sel = $('#pj-channel');
+  const prev = sel.value;
+  sel.innerHTML = '';
+  const opts = state.channels.filter(c => c.tipe === state.pjTipe && c.aktif);
+  if (opts.length === 0) sel.appendChild(new Option('Belum ada channel — tambah di bawah', ''));
+  opts.forEach(c => sel.appendChild(new Option(c.nama, c.id)));
+  if (opts.some(c => String(c.id) === prev)) sel.value = prev;
+}
+function fillMenuSelectPj(){
+  const sel = $('#pj-menu');
+  sel.innerHTML = '';
+  sel.appendChild(new Option('Pilih menu…',''));
+  state.menuActive.forEach(m => sel.appendChild(new Option(menuOptionLabel(m), m.id)));
+}
+
+async function initPenjualan(){
+  await loadChannels();
+  await loadPenjualan();
+
+  $('#pj-tanggal').value = state.pjAnchor;
+  $('#pj-anchor').value = state.pjAnchor;
+  fillChannelSelect();
+  fillMenuSelectPj();
+  renderChannelTable();
+
+  $('#pj-tipe').addEventListener('change', e => { state.pjTipe = e.target.value; fillChannelSelect(); });
+
+  $('#pj-submit').addEventListener('click', submitPenjualan);
+  $('#ch-submit').addEventListener('click', submitChannel);
+
+  $$('#pj-rentang button').forEach(b => b.addEventListener('click', () => {
+    state.pjRentang = b.dataset.r;
+    $$('#pj-rentang button').forEach(x => x.classList.toggle('on', x===b));
+    renderPenjualan();
+  }));
+  $('#pj-anchor').addEventListener('change', e => { state.pjAnchor = e.target.value; renderPenjualan(); });
+  $('#pj-pdf').addEventListener('click', downloadPenjualanPdf);
+
+  renderPenjualan();
+}
+
+async function submitChannel(){
+  const tipe = $('#ch-tipe').value;
+  const nama = $('#ch-nama').value.trim();
+  const msg = $('#ch-msg');
+  if (!nama) { msg.innerHTML = '<div class="msg-err">Isi nama channel dulu.</div>'; return; }
+  const btn = $('#ch-submit'); btn.disabled = true;
+  const { error } = await sb.from('sales_channels').insert({ tipe, nama });
+  btn.disabled = false;
+  if (error) { msg.innerHTML = '<div class="msg-err">Gagal menambah: ' + error.message + '</div>'; return; }
+  $('#ch-nama').value = '';
+  msg.innerHTML = '<div class="msg-ok">Channel "' + nama + '" ditambahkan ✅</div>';
+  setTimeout(() => { msg.innerHTML=''; }, 3000);
+  await loadChannels();
+  renderChannelTable();
+  fillChannelSelect();
+}
+
+async function toggleChannel(id, val){
+  const { error } = await sb.from('sales_channels').update({ aktif: val }).eq('id', id);
+  if (error) { alert('Gagal memperbarui: ' + error.message); return; }
+  await loadChannels();
+  renderChannelTable();
+  fillChannelSelect();
+}
+
+function renderChannelTable(){
+  const tb = $('#tbl-channel'); tb.innerHTML = '';
+  state.channels.forEach(c => {
+    const tr = document.createElement('tr');
+    const ctd = document.createElement('td'); const tag = document.createElement('span');
+    tag.className = 'chtag ' + c.tipe; tag.textContent = c.tipe; ctd.appendChild(tag); tr.appendChild(ctd);
+    tr.appendChild(td(c.nama));
+    const stTd = document.createElement('td'); const pill = document.createElement('span'); pill.className='pill';
+    pill.style.color = c.aktif ? 'var(--ok)' : 'var(--ink-soft)'; pill.textContent = c.aktif ? 'Aktif' : 'Nonaktif'; stTd.appendChild(pill); tr.appendChild(stTd);
+    const aTd = document.createElement('td'); const btn = document.createElement('button'); btn.className='mini'; btn.type='button';
+    btn.textContent = c.aktif ? 'Nonaktifkan' : 'Aktifkan';
+    btn.addEventListener('click', () => toggleChannel(c.id, !c.aktif));
+    aTd.appendChild(btn); tr.appendChild(aTd);
+    tb.appendChild(tr);
+  });
+}
+
+async function submitPenjualan(){
+  const msg = $('#pj-msg');
+  const channelId = $('#pj-channel').value;
+  const menuId = $('#pj-menu').value;
+  const tanggal = $('#pj-tanggal').value;
+  const jumlah = Math.max(1, Number($('#pj-jumlah').value) || 1);
+  const bayar = $('#pj-bayar').value;
+  const catatan = $('#pj-catatan').value.trim() || null;
+  if (!channelId) { msg.innerHTML = '<div class="msg-err">Pilih atau tambah channel dulu.</div>'; return; }
+  if (!menuId) { msg.innerHTML = '<div class="msg-err">Pilih menu dulu.</div>'; return; }
+  if (!tanggal) { msg.innerHTML = '<div class="msg-err">Isi tanggal dulu.</div>'; return; }
+  const m = state.menuAll.find(x => String(x.id) === String(menuId)) || {};
+  const payload = {
+    tanggal, channel_id: Number(channelId), menu_id: Number(menuId), jumlah,
+    harga_satuan: m.harga || 0, metode_bayar: bayar, catatan,
+    dicatat_oleh: state.authUserId || null
+  };
+  const btn = $('#pj-submit'); btn.disabled = true; btn.textContent = 'Menyimpan…';
+  const { error } = await sb.from('penjualan_harian').insert(payload);
+  btn.disabled = false; btn.textContent = 'Simpan';
+  if (error) { msg.innerHTML = '<div class="msg-err">Gagal menyimpan: ' + error.message + '</div>'; return; }
+  msg.innerHTML = '<div class="msg-ok">Penjualan tersimpan ✅</div>';
+  $('#pj-jumlah').value = 1; $('#pj-catatan').value = '';
+  setTimeout(() => { msg.innerHTML=''; }, 3000);
+  await loadPenjualan();
+  renderPenjualan();
+}
+
+async function deletePenjualan(id){
+  const row = state.penjualan.find(x => x.id === id);
+  if (!row || !confirm('Hapus data penjualan tanggal ' + row.tanggal + ' ini? Tindakan ini tidak bisa dibatalkan.')) return;
+  const { error } = await sb.from('penjualan_harian').delete().eq('id', id);
+  if (error) { alert('Gagal menghapus: ' + error.message); return; }
+  await loadPenjualan();
+  renderPenjualan();
+}
+
+/* Senin sebagai awal minggu */
+function startOfWeek(d){ const x = new Date(d); const day = (x.getDay()+6)%7; x.setDate(x.getDate()-day); return x; }
+function endOfWeek(d){ const x = startOfWeek(d); x.setDate(x.getDate()+6); return x; }
+function startOfMonth(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
+function endOfMonth(d){ return new Date(d.getFullYear(), d.getMonth()+1, 0); }
+function toISO(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function fmtIDShort(iso){ return new Date(iso+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}); }
+
+function computeRange(){
+  const anchor = new Date((state.pjAnchor || toISO(new Date())) + 'T00:00:00');
+  if (state.pjRentang === 'harian') return { start: toISO(anchor), end: toISO(anchor), label: fmtIDShort(toISO(anchor)) };
+  if (state.pjRentang === 'mingguan') {
+    const s = startOfWeek(anchor), e = endOfWeek(anchor);
+    return { start: toISO(s), end: toISO(e), label: fmtIDShort(toISO(s)) + ' – ' + fmtIDShort(toISO(e)) };
+  }
+  const s = startOfMonth(anchor), e = endOfMonth(anchor);
+  return { start: toISO(s), end: toISO(e), label: anchor.toLocaleDateString('id-ID',{month:'long',year:'numeric'}) };
+}
+
+function penjualanInRange(range){
+  return state.penjualan.filter(p => p.tanggal >= range.start && p.tanggal <= range.end);
+}
+
+function channelOf(id){ return state.channels.find(c => Number(c.id) === Number(id)) || { tipe:'?', nama:'Channel dihapus' }; }
+function menuOf(id){ return state.menuAll.find(m => Number(m.id) === Number(id)) || { nama:'Menu dihapus' }; }
+
+function renderPenjualan(){
+  const range = computeRange();
+  $('#pj-range-label').textContent = range.label;
+  $('#pj-rincian-sub').textContent = 'Rentang: ' + range.label;
+  const rows = penjualanInRange(range).sort((a,b) => b.tanggal.localeCompare(a.tanggal) || b.id - a.id);
+
+  let totalCup = 0, totalRp = 0;
+  const byTipe = { outlet:0, event:0, mitra:0 };
+  rows.forEach(r => { totalCup += r.jumlah; totalRp += Number(r.total||0); const ch = channelOf(r.channel_id); if (byTipe[ch.tipe] != null) byTipe[ch.tipe] += Number(r.total||0); });
+
+  $('#pj-t-trx').textContent = fmtN(rows.length);
+  $('#pj-t-cup').textContent = fmtN(totalCup);
+  $('#pj-t-rp').textContent = 'Rp' + fmtN(totalRp);
+  $('#pj-t-split').textContent = 'Rp' + fmtN(byTipe.outlet) + ' / Rp' + fmtN(byTipe.event) + ' / Rp' + fmtN(byTipe.mitra);
+
+  const tb = $('#tbl-pj'); tb.innerHTML = '';
+  $('#empty-pj').classList.toggle('hidden', rows.length > 0);
+  rows.forEach(r => {
+    const ch = channelOf(r.channel_id); const m = menuOf(r.menu_id);
+    const tr = document.createElement('tr');
+    tr.append(td(fmtIDShort(r.tanggal)));
+    const ctd = document.createElement('td'); const tag = document.createElement('span'); tag.className='chtag '+ch.tipe; tag.textContent=ch.tipe; ctd.appendChild(tag); tr.appendChild(ctd);
+    tr.append(td(ch.nama,'hide-sm'), td(m.nama,'nm'), td(r.jumlah,'num'), td('Rp'+fmtN(r.total||0),'num hide-sm'));
+    const bTd = document.createElement('td'); bTd.className='hide-sm'; const pill=document.createElement('span'); pill.className='pill'; pill.textContent=r.metode_bayar; bTd.appendChild(pill); tr.appendChild(bTd);
+    const aTd = document.createElement('td'); const del = document.createElement('button'); del.className='mini ghost'; del.type='button'; del.textContent='Hapus';
+    del.addEventListener('click', () => deletePenjualan(r.id));
+    aTd.appendChild(del); tr.appendChild(aTd);
+    tb.appendChild(tr);
+  });
+}
+
+function downloadPenjualanPdf(){
+  const range = computeRange();
+  const rows = penjualanInRange(range).sort((a,b) => a.tanggal.localeCompare(b.tanggal));
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const navy = [23,39,94], orange = [245,165,36];
+
+  doc.setFillColor(...navy); doc.rect(0,0,210,24,'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(15); doc.setFont(undefined,'bold');
+  doc.text('Laporan Penjualan Dopamilk', 14, 15);
+  doc.setFontSize(10); doc.setFont(undefined,'normal');
+  doc.text(state.pjRentang.charAt(0).toUpperCase()+state.pjRentang.slice(1) + ' · ' + range.label, 14, 21);
+
+  doc.setTextColor(30,30,30);
+  let totalCup = 0, totalRp = 0;
+  const byTipe = { outlet:0, event:0, mitra:0 };
+  rows.forEach(r => { totalCup += r.jumlah; totalRp += Number(r.total||0); const ch = channelOf(r.channel_id); if (byTipe[ch.tipe]!=null) byTipe[ch.tipe]+=Number(r.total||0); });
+
+  doc.setFontSize(10);
+  doc.text('Total transaksi: ' + rows.length, 14, 33);
+  doc.text('Total cup: ' + fmtN(totalCup), 14, 39);
+  doc.text('Total penjualan: Rp' + fmtN(totalRp), 14, 45);
+  doc.text('Outlet Rp' + fmtN(byTipe.outlet) + '  ·  Event Rp' + fmtN(byTipe.event) + '  ·  Mitra Rp' + fmtN(byTipe.mitra), 14, 51);
+
+  doc.autoTable({
+    startY: 58,
+    head: [['Tanggal','Channel','Nama','Menu','Jml','Bayar','Total (Rp)']],
+    body: rows.map(r => { const ch = channelOf(r.channel_id); const m = menuOf(r.menu_id);
+      return [fmtIDShort(r.tanggal), ch.tipe, ch.nama, m.nama, r.jumlah, r.metode_bayar, fmtN(r.total||0)]; }),
+    styles: { fontSize: 8, cellPadding: 2.5 },
+    headStyles: { fillColor: navy, textColor: 255 },
+    alternateRowStyles: { fillColor: [251,243,231] },
+    columnStyles: { 4:{halign:'right'}, 6:{halign:'right'} }
+  });
+
+  let y = doc.lastAutoTable.finalY + 10;
+  if (y > 270) { doc.addPage(); y = 20; }
+  doc.setFontSize(11); doc.setFont(undefined,'bold'); doc.setTextColor(...navy);
+  doc.text('Rekap per menu', 14, y);
+  const byMenu = new Map();
+  rows.forEach(r => { const m = menuOf(r.menu_id); if (!byMenu.has(r.menu_id)) byMenu.set(r.menu_id, { nama: m.nama, cup:0, rp:0 }); const o = byMenu.get(r.menu_id); o.cup += r.jumlah; o.rp += Number(r.total||0); });
+  doc.autoTable({
+    startY: y + 4,
+    head: [['Menu','Cup terjual','Rp']],
+    body: [...byMenu.values()].sort((a,b)=>b.cup-a.cup).map(m => [m.nama, m.cup, fmtN(m.rp)]),
+    styles: { fontSize: 8, cellPadding: 2.5 },
+    headStyles: { fillColor: orange, textColor: [23,39,94] },
+    columnStyles: { 1:{halign:'right'}, 2:{halign:'right'} }
+  });
+
+  const fname = 'Laporan-Penjualan-' + state.pjRentang + '-' + range.start + '_sd_' + range.end + '.pdf';
+  doc.save(fname);
 }
 
 /* ---------------- SKRIP CHAT ---------------- */
