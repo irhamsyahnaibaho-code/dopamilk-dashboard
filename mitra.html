@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dashboard Admin · Dopamilk</title>
+<title>Mitra PNDI · Dopamilk</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧋</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -80,10 +80,8 @@ main{padding:20px;max-width:1180px;margin:0 auto}
 
 .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{border:1.5px solid var(--line);background:#fff;border-radius:13px;padding:5px 13px;font-size:13px;font-weight:600;color:var(--ink);text-align:center;line-height:1.3}
+.chip{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:5px 13px;font-size:13px;font-weight:600;color:var(--ink)}
 .chip.on{background:var(--navy);border-color:var(--navy);color:#fff}
-.chip .chip-date{display:block;font-size:10.5px;font-weight:500;color:var(--ink-soft);margin-top:1px}
-.chip.on .chip-date{color:#C7CEF0}
 select,input[type=search],input.cat{font-size:13px;padding:7px 11px;border:1.5px solid var(--line);border-radius:9px;background:#fff;color:var(--ink)}
 input[type=search]{min-width:200px;flex:1}
 input.cat{width:100%;min-width:9rem}
@@ -172,7 +170,7 @@ button.btn-sm:disabled{opacity:.55}
 <div id="login-screen">
   <div class="login-card">
     <img src="logo-dopamilk.png" alt="Dopamilk">
-    <h1>Dashboard Admin · Dopa</h1>
+    <h1>Mitra PNDI · Dopa</h1>
     <p class="sub">Masuk dengan akun admin Dopa kamu</p>
     <div id="login-err" class="login-err hidden"></div>
     <form id="login-form">
@@ -187,7 +185,7 @@ button.btn-sm:disabled{opacity:.55}
 <div id="app" class="hidden">
   <header class="top">
     <img src="logo-dopamilk.png" alt="Dopamilk">
-    <div class="title">Dashboard Admin<small id="hdr-sub">Dopa</small></div>
+    <div class="title">Mitra PNDI<small id="hdr-sub">Gelombang 6–13 · Admin Dopa</small></div>
     <span class="sync off" id="sync-badge"><span class="dot"></span><span id="sync-text">Menghubungkan…</span></span>
     <button class="logout" id="btn-logout">Keluar</button>
   </header>
@@ -198,7 +196,6 @@ button.btn-sm:disabled{opacity:.55}
     <button data-tab="unik">Kontak unik</button>
     <button data-tab="skrip">Skrip chat</button>
     <button data-tab="pesanan">Pesanan harian</button>
-    <button data-tab="laporan">Laporan</button>
     <button data-tab="penjualan">Penjualan</button>
   </nav>
 
@@ -303,6 +300,23 @@ Kalau Kakak berkenan, boleh kami jelaskan detailnya? Kalau belum bisa juga tidak
       </div>
 
       <div class="card">
+        <h2>Semua pesanan harian</h2>
+        <p class="sub">Semua pesanan yang pernah tercatat, bisa dicari dan difilter per gelombang. Hapus di sini kalau salah input nama/pesanan.</p>
+        <div class="controls">
+          <div class="chips" id="riw-gel-chips"></div>
+          <input type="search" id="riw-cari" placeholder="Cari nama pemesan, halaqoh, menu…">
+        </div>
+        <p class="count"><b id="c-riwpo">0</b> pesanan ditampilkan</p>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Tanggal</th><th>Gel</th><th class="hide-sm">Halaqoh</th><th class="hide-sm">Musyrif</th><th>Pemesan</th><th>Menu</th><th class="num">Jml</th><th class="hide-sm">Bayar</th><th></th></tr></thead>
+            <tbody id="tbl-riwpo"></tbody>
+          </table>
+          <p class="empty hidden" id="empty-riwpo">Belum ada pesanan tercatat.</p>
+        </div>
+      </div>
+
+      <div class="card">
         <h2>Rekap reward semua halaqoh</h2>
         <p class="sub">Urut dari cup terbanyak. 1 cup gratis varian reguler per kelipatan 7 cup, akumulasi selama satu gelombang.</p>
         <div class="controls"><div class="chips" id="rw-gel-chips"></div></div>
@@ -324,48 +338,6 @@ Kalau Kakak berkenan, boleh kami jelaskan detailnya? Kalau belum bisa juga tidak
             <tbody id="tbl-riwayat"></tbody>
           </table>
           <p class="empty hidden" id="empty-riwayat">Belum ada reward tercatat.</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="panel" data-panel="laporan">
-      <div class="controls">
-        <div class="chips" id="lap-gel-chips"></div>
-      </div>
-      <div class="tiles">
-        <div class="tile"><div class="lab">Total pesanan</div><div class="num" id="lap-t-pesanan">—</div></div>
-        <div class="tile"><div class="lab">Total cup</div><div class="num" id="lap-t-cup">—</div></div>
-        <div class="tile"><div class="lab">Total penjualan</div><div class="num" id="lap-t-rp">—</div></div>
-        <div class="tile"><div class="lab">Lunas QRIS / Belum bayar</div><div class="num" id="lap-t-bayar" style="font-size:18px">—</div></div>
-      </div>
-
-      <div class="card">
-        <h2>Penjualan per gelombang</h2>
-        <p class="sub">Total Rupiah per gelombang (semua halaqoh).</p>
-        <div id="lap-chart" style="overflow:auto"></div>
-      </div>
-
-      <div class="card">
-        <h2>Rekap per halaqoh</h2>
-        <p class="sub">Urut dari penjualan terbesar.</p>
-        <div class="tbl-wrap">
-          <table>
-            <thead><tr><th>Gel</th><th>Halaqoh</th><th class="hide-sm">Musyrif</th><th class="num">Cup</th><th class="num">Rp</th><th class="num">Lunas</th><th class="num">Belum</th></tr></thead>
-            <tbody id="tbl-lap-halaqoh"></tbody>
-          </table>
-          <p class="empty hidden" id="empty-lap-halaqoh">Belum ada data pesanan.</p>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>Menu terlaris</h2>
-        <p class="sub">Urut dari cup terjual terbanyak.</p>
-        <div class="tbl-wrap">
-          <table>
-            <thead><tr><th>Menu</th><th class="num">Cup terjual</th><th class="num">Rp</th></tr></thead>
-            <tbody id="tbl-lap-menu"></tbody>
-          </table>
-          <p class="empty hidden" id="empty-lap-menu">Belum ada data pesanan.</p>
         </div>
       </div>
     </section>
@@ -433,7 +405,31 @@ Kalau Kakak berkenan, boleh kami jelaskan detailnya? Kalau belum bisa juga tidak
         <div class="tile"><div class="lab">Total transaksi</div><div class="num" id="pj-t-trx">—</div></div>
         <div class="tile"><div class="lab">Total cup</div><div class="num" id="pj-t-cup">—</div></div>
         <div class="tile"><div class="lab">Total penjualan</div><div class="num" id="pj-t-rp">—</div></div>
-        <div class="tile"><div class="lab">Outlet / Event / Mitra</div><div class="num" id="pj-t-split" style="font-size:16px">—</div></div>
+        <div class="tile"><div class="lab">Outlet / Event / Mitra / PNDI</div><div class="num" id="pj-t-split" style="font-size:15px">—</div></div>
+      </div>
+
+      <div class="card">
+        <h2>Rekap per channel/mitra</h2>
+        <p class="sub">Termasuk pesanan PNDI (per halaqoh), digabung dengan Outlet/Event/Mitra. Urut dari penjualan terbesar, sesuai rentang di atas.</p>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Channel</th><th>Nama</th><th class="num">Cup</th><th class="num">Rp</th></tr></thead>
+            <tbody id="tbl-pj-channel"></tbody>
+          </table>
+          <p class="empty hidden" id="empty-pj-channel">Belum ada data di rentang ini.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Menu terlaris</h2>
+        <p class="sub">Urut dari cup terjual terbanyak, digabung semua channel termasuk PNDI, sesuai rentang di atas.</p>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Menu</th><th class="num">Cup terjual</th><th class="num">Rp</th></tr></thead>
+            <tbody id="tbl-pj-menu"></tbody>
+          </table>
+          <p class="empty hidden" id="empty-pj-menu">Belum ada data di rentang ini.</p>
+        </div>
       </div>
 
       <div class="card">
@@ -506,7 +502,7 @@ async function afterLogin(){
     const { data: rowAdmin } = await sb.from('admin_dopa').select('nama').eq('email', user.email).maybeSingle();
     if (rowAdmin && rowAdmin.nama) nama = rowAdmin.nama;
   } catch(e) {}
-  $('#hdr-sub').textContent = 'Halo, ' + nama;
+  $('#hdr-sub').textContent = 'Halo, ' + nama + ' · Gelombang 6–13';
   $('#login-screen').classList.add('hidden');
   $('#app').classList.remove('hidden');
   await loadAll();
@@ -543,7 +539,7 @@ async function loadAll(){
   initPesanan();
   await loadRewardView();
   await loadRiwayat();
-  renderLapChips();
+  renderRiwPoChips();
   await loadLaporan();
   await initPenjualan();
   setSync(true, 'Status bersama tersambung');
@@ -645,20 +641,19 @@ function renderChart(){
   state.rows.forEach(r => { if(!byGel.has(r.gelombang)) byGel.set(r.gelombang,{putra:0,putri:0,tanggal:r.tanggal}); const o=byGel.get(r.gelombang); if(r.jenis==='Putra')o.putra++; else o.putri++; });
   const data = [...byGel.entries()].sort((a,b)=>a[0]-b[0]);
   const max = Math.max(...data.map(([,o])=>o.putra+o.putri),1);
-  const svgW = Math.max(480, data.length*72), svgH = 236, bw = 30;
+  const svgW = Math.max(480, data.length*64), svgH = 220, bw = 30;
   let svg = `<svg width="100%" viewBox="0 0 ${svgW} ${svgH}" style="min-width:${svgW}px">`;
   data.forEach(([g,o],i) => {
-    const total = o.putra+o.putri, x = 28+i*72;
-    const hPutra = (o.putra/max)*150, hPutri = (o.putri/max)*150;
-    const baseY = svgH-48;
+    const total = o.putra+o.putri, x = 24+i*64;
+    const hPutra = (o.putra/max)*160, hPutri = (o.putri/max)*160;
+    const baseY = svgH-34;
     const yPutra = baseY-hPutra;
     const yPutri = yPutra-hPutri;
     svg += `<g style="cursor:pointer" data-g="${g}">
       <rect x="${x}" y="${yPutra}" width="${bw}" height="${hPutra}" fill="var(--navy)" rx="2"></rect>
       <rect x="${x}" y="${yPutri}" width="${bw}" height="${hPutri}" fill="var(--orange)" rx="2"></rect>
       <text x="${x+bw/2}" y="${yPutri-6}" text-anchor="middle" font-size="11" fill="var(--navy)" font-weight="700">${total}</text>
-      <text x="${x+bw/2}" y="${svgH-30}" text-anchor="middle" font-size="11" fill="var(--ink)" font-weight="700">Gel ${g}</text>
-      <text x="${x+bw/2}" y="${svgH-14}" text-anchor="middle" font-size="9.5" fill="var(--ink-soft)">${o.tanggal||''}</text>
+      <text x="${x+bw/2}" y="${svgH-14}" text-anchor="middle" font-size="11" fill="var(--ink-soft)">Gel ${g}</text>
     </g>`;
   });
   svg += `</svg>`;
@@ -669,17 +664,11 @@ function renderChart(){
   }));
 }
 
-function gelChipBtn(val, label, tanggal, isOn, onClick){
-  const b = document.createElement('button'); b.className = 'chip' + (isOn ? ' on' : '');
-  b.append(document.createTextNode(label));
-  if (tanggal) { const d = document.createElement('small'); d.className = 'chip-date'; d.textContent = tanggal; b.appendChild(d); }
-  b.addEventListener('click', onClick);
-  return b;
-}
 function renderChips(){
   const box = $('#gel-chips'); box.innerHTML = '';
-  box.appendChild(gelChipBtn('all', 'Semua', '', state.gel==='all', () => { state.gel='all'; renderChips(); renderGel(); }));
-  state.gelombang.forEach(g => box.appendChild(gelChipBtn(String(g.nomor), 'Gel '+g.nomor, g.tanggal, state.gel===String(g.nomor), () => { state.gel=String(g.nomor); renderChips(); renderGel(); })));
+  const mk = (val,label) => { const b=document.createElement('button'); b.className='chip'+(state.gel===val?' on':''); b.textContent=label; b.addEventListener('click',()=>{state.gel=val; renderChips(); renderGel();}); return b; };
+  box.appendChild(mk('all','Semua'));
+  state.gelombang.forEach(g => box.appendChild(mk(String(g.nomor), 'Gel '+g.nomor)));
 }
 
 /* ---------------- RENDER: tables ---------------- */
@@ -772,7 +761,7 @@ function initPesanan(){
   const sel = $('#po-penugasan');
   sel.innerHTML = '';
   sel.appendChild(new Option('Pilih halaqoh…', ''));
-  state.rows.forEach(r => sel.appendChild(new Option('Gel '+r.gelombang+' ('+r.tanggal+') · Halaqoh '+r.kelompok+' · '+r.nama, r.id)));
+  state.rows.forEach(r => sel.appendChild(new Option('Gel '+r.gelombang+' · Halaqoh '+r.kelompok+' · '+r.nama, r.id)));
   sel.value = state.poSel;
   sel.addEventListener('change', () => { state.poSel = sel.value; updatePoLabel(); loadTodayList(); });
 
@@ -834,7 +823,7 @@ $('#po-submit').addEventListener('click', async () => {
 
 function updatePoLabel(){
   const r = state.rows.find(x => x.id === state.poSel);
-  $('#po-halaqoh-label').textContent = r ? ('Gel '+r.gelombang+' ('+r.tanggal+') · Halaqoh '+r.kelompok+' · '+r.nama) : 'pilih halaqoh di atas';
+  $('#po-halaqoh-label').textContent = r ? ('Gel '+r.gelombang+' · Halaqoh '+r.kelompok+' · '+r.nama) : 'pilih halaqoh di atas';
 }
 
 async function loadTodayList(){
@@ -872,8 +861,9 @@ async function loadRewardView(){
 
 function renderRewardChips(){
   const box = $('#rw-gel-chips'); box.innerHTML = '';
-  box.appendChild(gelChipBtn('all', 'Semua', '', state.rwGel==='all', () => { state.rwGel='all'; renderRewardChips(); renderReward(); }));
-  state.gelombang.forEach(g => box.appendChild(gelChipBtn(String(g.nomor), 'Gel '+g.nomor, g.tanggal, state.rwGel===String(g.nomor), () => { state.rwGel=String(g.nomor); renderRewardChips(); renderReward(); })));
+  const mk = (val,label) => { const b=document.createElement('button'); b.className='chip'+(state.rwGel===val?' on':''); b.textContent=label; b.addEventListener('click',()=>{state.rwGel=val; renderRewardChips(); renderReward();}); return b; };
+  box.appendChild(mk('all','Semua'));
+  state.gelombang.forEach(g => box.appendChild(mk(String(g.nomor), 'Gel '+g.nomor)));
 }
 
 function genKodeVoucher(r){
@@ -978,95 +968,51 @@ function renderReward(){
   });
 }
 
-/* ---------------- LAPORAN ---------------- */
-state.lapGel = 'all';
+/* ---------------- RIWAYAT PESANAN PNDI (juga dipakai untuk gabungan Penjualan) ---------------- */
 state.lapPesanan = [];
+state.riwPoGel = 'all';
+state.riwPoQ = '';
 
-function renderLapChips(){
-  const box = $('#lap-gel-chips'); box.innerHTML = '';
-  box.appendChild(gelChipBtn('all', 'Semua gelombang', '', state.lapGel==='all', () => { state.lapGel='all'; renderLapChips(); renderLaporan(); }));
-  state.gelombang.forEach(g => box.appendChild(gelChipBtn(String(g.nomor), 'Gel '+g.nomor, g.tanggal, state.lapGel===String(g.nomor), () => { state.lapGel=String(g.nomor); renderLapChips(); renderLaporan(); })));
+function renderRiwPoChips(){
+  const box = $('#riw-gel-chips'); box.innerHTML = '';
+  const mk = (val,label) => { const b=document.createElement('button'); b.className='chip'+(state.riwPoGel===val?' on':''); b.textContent=label; b.addEventListener('click',()=>{state.riwPoGel=val; renderRiwPoChips(); renderRiwayatPesanan();}); return b; };
+  box.appendChild(mk('all','Semua'));
+  state.gelombang.forEach(g => box.appendChild(mk(String(g.nomor), 'Gel '+g.nomor)));
 }
 
 async function loadLaporan(){
   const { data, error } = await sb.from('pndi_pesanan').select('*').limit(5000);
   if (error) { console.error(error); return; }
   state.lapPesanan = data || [];
-  renderLaporan();
+  renderRiwayatPesanan();
+  renderPenjualan();
 }
 
-function renderLaporan(){
-  const infoOfPenugasan = (id) => state.rows.find(r => r.id === id);
+function renderRiwayatPesanan(){
   const menuMap = new Map(state.menuAll.map(m => [m.id, m]));
-  const rows = state.lapPesanan.filter(p => {
-    if (state.lapGel === 'all') return true;
-    const info = infoOfPenugasan(p.penugasan_id);
-    return info && String(info.gelombang) === String(state.lapGel);
-  });
-
-  let totalCup = 0, totalRp = 0, lunas = 0, belum = 0;
-  const byHalaqoh = new Map(), byGel = new Map(), byMenu = new Map();
-
-  rows.forEach(p => {
+  const all = (state.lapPesanan||[]).map(p => {
+    const info = state.rows.find(r => r.id === p.penugasan_id) || {};
     const m = menuMap.get(p.menu_id) || {};
-    const rp = (m.harga||0) * p.jumlah;
-    totalCup += p.jumlah; totalRp += rp;
-    if (p.bayar === 'Lunas QRIS') lunas++; else belum++;
-
-    const info = infoOfPenugasan(p.penugasan_id) || {};
-    if (!byHalaqoh.has(p.penugasan_id)) byHalaqoh.set(p.penugasan_id, { gelombang: info.gelombang, kelompok: info.kelompok, nama: info.nama, cup:0, rp:0, lunas:0, belum:0 });
-    const h = byHalaqoh.get(p.penugasan_id); h.cup += p.jumlah; h.rp += rp; if (p.bayar==='Lunas QRIS') h.lunas += p.jumlah; else h.belum += p.jumlah;
-
-    const g = info.gelombang;
-    if (g != null) { if (!byGel.has(g)) byGel.set(g, { cup:0, rp:0 }); const gg = byGel.get(g); gg.cup += p.jumlah; gg.rp += rp; }
-
-    if (!byMenu.has(p.menu_id)) byMenu.set(p.menu_id, { nama: m.nama || 'Menu dihapus', cup:0, rp:0 });
-    const mm = byMenu.get(p.menu_id); mm.cup += p.jumlah; mm.rp += rp;
-  });
-
-  $('#lap-t-pesanan').textContent = fmtN(rows.length);
-  $('#lap-t-cup').textContent = fmtN(totalCup);
-  $('#lap-t-rp').textContent = 'Rp' + fmtN(totalRp);
-  $('#lap-t-bayar').textContent = fmtN(lunas) + ' / ' + fmtN(belum);
-
-  /* chart per gelombang */
-  const chartBox = $('#lap-chart'); chartBox.innerHTML = '';
-  const gelData = [...byGel.entries()].sort((a,b) => a[0]-b[0]);
-  if (gelData.length === 0) { chartBox.innerHTML = '<p class="empty">Belum ada data pesanan.</p>'; }
-  else {
-    const max = Math.max(...gelData.map(([,o])=>o.rp), 1);
-    const svgW = Math.max(480, gelData.length*72), svgH = 210, bw = 34;
-    let svg = `<svg width="100%" viewBox="0 0 ${svgW} ${svgH}" style="min-width:${svgW}px">`;
-    gelData.forEach(([g,o],i) => {
-      const x = 26+i*72, h = (o.rp/max)*150, y = svgH-34-h;
-      svg += `<g><rect x="${x}" y="${y}" width="${bw}" height="${h}" fill="var(--navy)" rx="3"></rect>
-        <text x="${x+bw/2}" y="${y-8}" text-anchor="middle" font-size="11" fill="var(--navy)" font-weight="700">Rp${fmtN(o.rp)}</text>
-        <text x="${x+bw/2}" y="${svgH-14}" text-anchor="middle" font-size="11" fill="var(--ink-soft)">Gel ${g}</text></g>`;
-    });
-    svg += `</svg>`;
-    chartBox.innerHTML = svg;
-  }
-
-  /* per halaqoh table */
-  const tbH = $('#tbl-lap-halaqoh'); tbH.innerHTML = '';
-  const halRows = [...byHalaqoh.values()].sort((a,b) => b.rp - a.rp);
-  $('#empty-lap-halaqoh').classList.toggle('hidden', halRows.length > 0);
-  halRows.forEach(h => {
+    return { ...p, gelombang: info.gelombang, kelompok: info.kelompok, musyrif: info.nama, menuNama: m.nama || 'Menu dihapus' };
+  }).sort((a,b) => (b.tanggal||'').localeCompare(a.tanggal||'') || b.id - a.id);
+  const q = state.riwPoQ.toLowerCase();
+  const rows = all.filter(r => (state.riwPoGel==='all' || String(r.gelombang)===String(state.riwPoGel))
+    && (!q || [r.pemesan, r.musyrif, r.kelompok, r.menuNama].join(' ').toLowerCase().includes(q)));
+  $('#c-riwpo').textContent = fmtN(rows.length);
+  $('#empty-riwpo').classList.toggle('hidden', rows.length>0);
+  const tb = $('#tbl-riwpo'); tb.innerHTML = '';
+  rows.forEach(r => {
     const tr = document.createElement('tr');
-    tr.append(td(h.gelombang), td(h.kelompok), td(h.nama,'hide-sm'), td(h.cup,'num'), td('Rp'+fmtN(h.rp),'num'), td(h.lunas,'num'), td(h.belum,'num'));
-    tbH.appendChild(tr);
-  });
-
-  /* menu terlaris table */
-  const tbM = $('#tbl-lap-menu'); tbM.innerHTML = '';
-  const menuRows = [...byMenu.values()].sort((a,b) => b.cup - a.cup);
-  $('#empty-lap-menu').classList.toggle('hidden', menuRows.length > 0);
-  menuRows.forEach(m => {
-    const tr = document.createElement('tr');
-    tr.append(td(m.nama,'nm'), td(m.cup,'num'), td('Rp'+fmtN(m.rp),'num'));
-    tbM.appendChild(tr);
+    tr.append(td(r.tanggal), td(r.gelombang), td(r.kelompok,'hide-sm'), td(r.musyrif,'hide-sm'), td(r.pemesan,'nm'), td(r.menuNama), td(r.jumlah,'num'));
+    const bTd = document.createElement('td'); bTd.className='hide-sm'; const pill=document.createElement('span'); pill.className='pill';
+    pill.style.color = r.bayar==='Lunas QRIS' ? 'var(--ok)' : 'var(--warn)'; pill.textContent=r.bayar; bTd.appendChild(pill); tr.appendChild(bTd);
+    const aTd = document.createElement('td'); const del=document.createElement('button'); del.className='mini ghost'; del.type='button'; del.textContent='Hapus';
+    del.addEventListener('click', async () => { if(!confirm('Hapus pesanan '+r.pemesan+'?')) return; await sb.from('pndi_pesanan').delete().eq('id', r.id); await loadLaporan(); loadTodayList(); loadRewardView(); });
+    aTd.appendChild(del); tr.appendChild(aTd);
+    tb.appendChild(tr);
   });
 }
+$('#riw-cari').addEventListener('input', e => { state.riwPoQ = e.target.value; renderRiwayatPesanan(); });
 
 /* ---------------- PENJUALAN HARIAN (Outlet / Event / Mitra) ---------------- */
 state.channels = [];
@@ -1101,8 +1047,6 @@ function fillMenuSelectPj(channelId){
   const prev = sel.value;
   sel.innerHTML = '';
   sel.appendChild(new Option('Pilih menu…',''));
-  // Menu dengan channel_id kosong = menu umum, tampil untuk semua channel.
-  // Menu dengan channel_id terisi = menu khusus (mis. 14oz Kantin Salman), hanya tampil untuk channel itu.
   const cid = channelId ? Number(channelId) : null;
   const opts = state.menuActive.filter(m => m.channel_id == null || (cid != null && Number(m.channel_id) === cid));
   opts.forEach(m => sel.appendChild(new Option(menuOptionLabel(m), m.id)));
@@ -1135,11 +1079,26 @@ async function initPenjualan(){
   renderPenjualan();
 }
 
+function normName(s){ return (s||'').trim().toLowerCase().replace(/\s+/g,' '); }
+function levenshtein(a,b){
+  const m=a.length, n=b.length;
+  const d=Array.from({length:m+1},()=>Array(n+1).fill(0));
+  for(let i=0;i<=m;i++) d[i][0]=i;
+  for(let j=0;j<=n;j++) d[0][j]=j;
+  for(let i=1;i<=m;i++) for(let j=1;j<=n;j++) d[i][j] = a[i-1]===b[j-1] ? d[i-1][j-1] : 1+Math.min(d[i-1][j-1],d[i-1][j],d[i][j-1]);
+  return d[m][n];
+}
+
 async function submitChannel(){
   const tipe = $('#ch-tipe').value;
   const nama = $('#ch-nama').value.trim();
   const msg = $('#ch-msg');
   if (!nama) { msg.innerHTML = '<div class="msg-err">Isi nama channel dulu.</div>'; return; }
+  const n1 = normName(nama);
+  const exact = state.channels.find(c => c.tipe === tipe && normName(c.nama) === n1);
+  if (exact) { msg.innerHTML = '<div class="msg-err">Channel "' + exact.nama + '" sudah ada (' + (exact.aktif?'Aktif':'Nonaktif') + '). Pakai yang sudah ada, atau aktifkan kembali kalau statusnya Nonaktif.</div>'; return; }
+  const mirip = state.channels.find(c => { if (c.tipe !== tipe) return false; const n2=normName(c.nama); const dist=levenshtein(n1,n2); return dist>0 && dist<=2 && Math.max(n1.length,n2.length)>=4; });
+  if (mirip && !confirm('Nama ini mirip dengan channel yang sudah ada: "' + mirip.nama + '". Lanjut tambah channel baru "' + nama + '"?')) return;
   const btn = $('#ch-submit'); btn.disabled = true;
   const { error } = await sb.from('sales_channels').insert({ tipe, nama });
   btn.disabled = false;
@@ -1147,6 +1106,22 @@ async function submitChannel(){
   $('#ch-nama').value = '';
   msg.innerHTML = '<div class="msg-ok">Channel "' + nama + '" ditambahkan ✅</div>';
   setTimeout(() => { msg.innerHTML=''; }, 3000);
+  await loadChannels();
+  renderChannelTable();
+  fillChannelSelect();
+}
+
+async function deleteChannel(id, nama){
+  if (!confirm('Hapus channel "' + nama + '"? Riwayat penjualan yang sudah tercatat untuk channel ini tidak akan terhapus, tapi akan tampil sebagai "Channel dihapus".')) return;
+  const { error } = await sb.from('sales_channels').delete().eq('id', id);
+  if (error) {
+    if (String(error.code) === '23503' || /foreign key/i.test(error.message||'')) {
+      alert('Channel ini masih dipakai di data lain (penjualan/menu), jadi belum bisa dihapus permanen. Coba Nonaktifkan saja supaya tidak muncul lagi di pilihan form.');
+    } else {
+      alert('Gagal menghapus: ' + error.message);
+    }
+    return;
+  }
   await loadChannels();
   renderChannelTable();
   fillChannelSelect();
@@ -1169,10 +1144,13 @@ function renderChannelTable(){
     tr.appendChild(td(c.nama));
     const stTd = document.createElement('td'); const pill = document.createElement('span'); pill.className='pill';
     pill.style.color = c.aktif ? 'var(--ok)' : 'var(--ink-soft)'; pill.textContent = c.aktif ? 'Aktif' : 'Nonaktif'; stTd.appendChild(pill); tr.appendChild(stTd);
-    const aTd = document.createElement('td'); const btn = document.createElement('button'); btn.className='mini'; btn.type='button';
+    const aTd = document.createElement('td'); aTd.className = 'acts';
+    const btn = document.createElement('button'); btn.className='mini'; btn.type='button';
     btn.textContent = c.aktif ? 'Nonaktifkan' : 'Aktifkan';
     btn.addEventListener('click', () => toggleChannel(c.id, !c.aktif));
-    aTd.appendChild(btn); tr.appendChild(aTd);
+    const del = document.createElement('button'); del.className='mini ghost'; del.type='button'; del.textContent='Hapus';
+    del.addEventListener('click', () => deleteChannel(c.id, c.nama));
+    aTd.append(btn, del); tr.appendChild(aTd);
     tb.appendChild(tr);
   });
 }
@@ -1240,32 +1218,81 @@ function penjualanInRange(range){
 function channelOf(id){ return state.channels.find(c => Number(c.id) === Number(id)) || { tipe:'?', nama:'Channel dihapus' }; }
 function menuOf(id){ return state.menuAll.find(m => Number(m.id) === Number(id)) || { nama:'Menu dihapus' }; }
 
+function gabunganRows(){
+  const menuMap = new Map(state.menuAll.map(m => [m.id, m]));
+  const pj = state.penjualan.map(r => {
+    const ch = channelOf(r.channel_id);
+    return { id:'pj-'+r.id, _src:'pj', _rawId:r.id, tanggal:r.tanggal, chTipe:ch.tipe, chNama:ch.nama,
+      menuNama: menuOf(r.menu_id).nama, jumlah:r.jumlah, total:Number(r.total||0), bayar:r.metode_bayar };
+  });
+  const pndi = (state.lapPesanan||[]).map(p => {
+    const info = state.rows.find(x => x.id === p.penugasan_id) || {};
+    const m = menuMap.get(p.menu_id) || {};
+    return { id:'pndi-'+p.id, _src:'pndi', _rawId:p.id, tanggal:p.tanggal, chTipe:'pndi',
+      chNama:'PNDI · Gel '+(info.gelombang??'?')+' Halaqoh '+(info.kelompok??'?'),
+      menuNama: m.nama || 'Menu dihapus', jumlah:p.jumlah, total:(m.harga||0)*p.jumlah,
+      bayar: p.bayar==='Lunas QRIS' ? 'QRIS' : 'Belum bayar' };
+  });
+  return [...pj, ...pndi];
+}
+function gabunganInRange(range){ return gabunganRows().filter(r => r.tanggal>=range.start && r.tanggal<=range.end); }
+
+async function deletePndiPesananFromPenjualan(id){
+  if (!confirm('Hapus pesanan PNDI ini? Ini akan memengaruhi rekap reward halaqoh terkait.')) return;
+  const { error } = await sb.from('pndi_pesanan').delete().eq('id', id);
+  if (error) { alert('Gagal menghapus: ' + error.message); return; }
+  await loadLaporan();
+  await loadRewardView();
+  loadTodayList();
+}
+
 function renderPenjualan(){
   const range = computeRange();
   $('#pj-range-label').textContent = range.label;
   $('#pj-rincian-sub').textContent = 'Rentang: ' + range.label;
-  const rows = penjualanInRange(range).sort((a,b) => b.tanggal.localeCompare(a.tanggal) || b.id - a.id);
+  const rows = gabunganInRange(range).sort((a,b) => b.tanggal.localeCompare(a.tanggal) || String(b.id).localeCompare(String(a.id)));
 
   let totalCup = 0, totalRp = 0;
-  const byTipe = { outlet:0, event:0, mitra:0 };
-  rows.forEach(r => { totalCup += r.jumlah; totalRp += Number(r.total||0); const ch = channelOf(r.channel_id); if (byTipe[ch.tipe] != null) byTipe[ch.tipe] += Number(r.total||0); });
+  const byTipe = { outlet:0, event:0, mitra:0, pndi:0 };
+  rows.forEach(r => { totalCup += r.jumlah; totalRp += Number(r.total||0); if (byTipe[r.chTipe] != null) byTipe[r.chTipe] += Number(r.total||0); });
 
   $('#pj-t-trx').textContent = fmtN(rows.length);
   $('#pj-t-cup').textContent = fmtN(totalCup);
   $('#pj-t-rp').textContent = 'Rp' + fmtN(totalRp);
-  $('#pj-t-split').textContent = 'Rp' + fmtN(byTipe.outlet) + ' / Rp' + fmtN(byTipe.event) + ' / Rp' + fmtN(byTipe.mitra);
+  $('#pj-t-split').textContent = 'Rp' + fmtN(byTipe.outlet) + ' / Rp' + fmtN(byTipe.event) + ' / Rp' + fmtN(byTipe.mitra) + ' / Rp' + fmtN(byTipe.pndi);
 
+  /* rekap per channel/mitra */
+  const byCh = new Map();
+  rows.forEach(r => { const key = r.chTipe+'|'+r.chNama; if(!byCh.has(key)) byCh.set(key, { tipe:r.chTipe, nama:r.chNama, cup:0, rp:0 }); const o=byCh.get(key); o.cup+=r.jumlah; o.rp+=Number(r.total||0); });
+  const tbCh = $('#tbl-pj-channel'); tbCh.innerHTML='';
+  const chRows = [...byCh.values()].sort((a,b)=>b.rp-a.rp);
+  $('#empty-pj-channel').classList.toggle('hidden', chRows.length>0);
+  chRows.forEach(c => {
+    const tr = document.createElement('tr');
+    const ctd = document.createElement('td'); const tag=document.createElement('span'); tag.className='chtag '+(c.tipe==='pndi'?'mitra':c.tipe); tag.textContent=c.tipe; ctd.appendChild(tag); tr.appendChild(ctd);
+    tr.append(td(c.nama,'nm'), td(c.cup,'num'), td('Rp'+fmtN(c.rp),'num'));
+    tbCh.appendChild(tr);
+  });
+
+  /* menu terlaris */
+  const byMenu = new Map();
+  rows.forEach(r => { if(!byMenu.has(r.menuNama)) byMenu.set(r.menuNama, { cup:0, rp:0 }); const o=byMenu.get(r.menuNama); o.cup+=r.jumlah; o.rp+=Number(r.total||0); });
+  const tbM = $('#tbl-pj-menu'); tbM.innerHTML='';
+  const menuRows = [...byMenu.entries()].sort((a,b)=>b[1].cup-a[1].cup);
+  $('#empty-pj-menu').classList.toggle('hidden', menuRows.length>0);
+  menuRows.forEach(([nama,o]) => { const tr=document.createElement('tr'); tr.append(td(nama,'nm'), td(o.cup,'num'), td('Rp'+fmtN(o.rp),'num')); tbM.appendChild(tr); });
+
+  /* rincian penjualan */
   const tb = $('#tbl-pj'); tb.innerHTML = '';
   $('#empty-pj').classList.toggle('hidden', rows.length > 0);
   rows.forEach(r => {
-    const ch = channelOf(r.channel_id); const m = menuOf(r.menu_id);
     const tr = document.createElement('tr');
     tr.append(td(fmtIDShort(r.tanggal)));
-    const ctd = document.createElement('td'); const tag = document.createElement('span'); tag.className='chtag '+ch.tipe; tag.textContent=ch.tipe; ctd.appendChild(tag); tr.appendChild(ctd);
-    tr.append(td(ch.nama,'hide-sm'), td(m.nama,'nm'), td(r.jumlah,'num'), td('Rp'+fmtN(r.total||0),'num hide-sm'));
-    const bTd = document.createElement('td'); bTd.className='hide-sm'; const pill=document.createElement('span'); pill.className='pill'; pill.textContent=r.metode_bayar; bTd.appendChild(pill); tr.appendChild(bTd);
+    const ctd = document.createElement('td'); const tag = document.createElement('span'); tag.className='chtag '+(r.chTipe==='pndi'?'mitra':r.chTipe); tag.textContent=r.chTipe; ctd.appendChild(tag); tr.appendChild(ctd);
+    tr.append(td(r.chNama,'hide-sm'), td(r.menuNama,'nm'), td(r.jumlah,'num'), td('Rp'+fmtN(r.total||0),'num hide-sm'));
+    const bTd = document.createElement('td'); bTd.className='hide-sm'; const pill=document.createElement('span'); pill.className='pill'; pill.textContent=r.bayar; bTd.appendChild(pill); tr.appendChild(bTd);
     const aTd = document.createElement('td'); const del = document.createElement('button'); del.className='mini ghost'; del.type='button'; del.textContent='Hapus';
-    del.addEventListener('click', () => deletePenjualan(r.id));
+    del.addEventListener('click', () => r._src==='pj' ? deletePenjualan(r._rawId) : deletePndiPesananFromPenjualan(r._rawId));
     aTd.appendChild(del); tr.appendChild(aTd);
     tb.appendChild(tr);
   });
@@ -1273,7 +1300,7 @@ function renderPenjualan(){
 
 function downloadPenjualanPdf(){
   const range = computeRange();
-  const rows = penjualanInRange(range).sort((a,b) => a.tanggal.localeCompare(b.tanggal));
+  const rows = gabunganInRange(range).sort((a,b) => a.tanggal.localeCompare(b.tanggal));
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
   const navy = [23,39,94], orange = [245,165,36];
@@ -1286,20 +1313,19 @@ function downloadPenjualanPdf(){
 
   doc.setTextColor(30,30,30);
   let totalCup = 0, totalRp = 0;
-  const byTipe = { outlet:0, event:0, mitra:0 };
-  rows.forEach(r => { totalCup += r.jumlah; totalRp += Number(r.total||0); const ch = channelOf(r.channel_id); if (byTipe[ch.tipe]!=null) byTipe[ch.tipe]+=Number(r.total||0); });
+  const byTipe = { outlet:0, event:0, mitra:0, pndi:0 };
+  rows.forEach(r => { totalCup += r.jumlah; totalRp += Number(r.total||0); if (byTipe[r.chTipe]!=null) byTipe[r.chTipe]+=Number(r.total||0); });
 
   doc.setFontSize(10);
   doc.text('Total transaksi: ' + rows.length, 14, 33);
   doc.text('Total cup: ' + fmtN(totalCup), 14, 39);
   doc.text('Total penjualan: Rp' + fmtN(totalRp), 14, 45);
-  doc.text('Outlet Rp' + fmtN(byTipe.outlet) + '  ·  Event Rp' + fmtN(byTipe.event) + '  ·  Mitra Rp' + fmtN(byTipe.mitra), 14, 51);
+  doc.text('Outlet Rp' + fmtN(byTipe.outlet) + '  ·  Event Rp' + fmtN(byTipe.event) + '  ·  Mitra Rp' + fmtN(byTipe.mitra) + '  ·  PNDI Rp' + fmtN(byTipe.pndi), 14, 51);
 
   doc.autoTable({
     startY: 58,
     head: [['Tanggal','Channel','Nama','Menu','Jml','Bayar','Total (Rp)']],
-    body: rows.map(r => { const ch = channelOf(r.channel_id); const m = menuOf(r.menu_id);
-      return [fmtIDShort(r.tanggal), ch.tipe, ch.nama, m.nama, r.jumlah, r.metode_bayar, fmtN(r.total||0)]; }),
+    body: rows.map(r => [fmtIDShort(r.tanggal), r.chTipe, r.chNama, r.menuNama, r.jumlah, r.bayar, fmtN(r.total||0)]),
     styles: { fontSize: 8, cellPadding: 2.5 },
     headStyles: { fillColor: navy, textColor: 255 },
     alternateRowStyles: { fillColor: [251,243,231] },
@@ -1311,11 +1337,11 @@ function downloadPenjualanPdf(){
   doc.setFontSize(11); doc.setFont(undefined,'bold'); doc.setTextColor(...navy);
   doc.text('Rekap per menu', 14, y);
   const byMenu = new Map();
-  rows.forEach(r => { const m = menuOf(r.menu_id); if (!byMenu.has(r.menu_id)) byMenu.set(r.menu_id, { nama: m.nama, cup:0, rp:0 }); const o = byMenu.get(r.menu_id); o.cup += r.jumlah; o.rp += Number(r.total||0); });
+  rows.forEach(r => { if (!byMenu.has(r.menuNama)) byMenu.set(r.menuNama, { cup:0, rp:0 }); const o = byMenu.get(r.menuNama); o.cup += r.jumlah; o.rp += Number(r.total||0); });
   doc.autoTable({
     startY: y + 4,
     head: [['Menu','Cup terjual','Rp']],
-    body: [...byMenu.values()].sort((a,b)=>b.cup-a.cup).map(m => [m.nama, m.cup, fmtN(m.rp)]),
+    body: [...byMenu.entries()].sort((a,b)=>b[1].cup-a[1].cup).map(([nama,o]) => [nama, o.cup, fmtN(o.rp)]),
     styles: { fontSize: 8, cellPadding: 2.5 },
     headStyles: { fillColor: orange, textColor: [23,39,94] },
     columnStyles: { 1:{halign:'right'}, 2:{halign:'right'} }
@@ -1450,7 +1476,7 @@ Semoga Allah membalas kebaikan Kakak. Kalau nanti bertugas lagi di gelombang ber
 function renderSkrip(){
   const sel = $('#sk-orang'); sel.innerHTML='';
   sel.appendChild(new Option('Isi skrip untuk… (biarkan untuk tetap pakai {nama})',''));
-  state.rows.forEach(r => sel.appendChild(new Option('Gel '+r.gelombang+' ('+r.tanggal+') · Halaqoh '+r.kelompok+' · '+r.nama, r.id)));
+  state.rows.forEach(r => sel.appendChild(new Option('Gel '+r.gelombang+' · Halaqoh '+r.kelompok+' · '+r.nama, r.id)));
   sel.value = state.orang;
   sel.addEventListener('change', () => { state.orang = sel.value; });
 
