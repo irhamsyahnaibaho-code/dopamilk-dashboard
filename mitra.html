@@ -1048,7 +1048,8 @@ function fillMenuSelectPj(channelId){
   sel.innerHTML = '';
   sel.appendChild(new Option('Pilih menu…',''));
   const cid = channelId ? Number(channelId) : null;
-  const opts = state.menuActive.filter(m => m.channel_id == null || (cid != null && Number(m.channel_id) === cid));
+  const khusus = cid != null ? state.menuActive.filter(m => Number(m.channel_id) === cid) : [];
+  const opts = khusus.length > 0 ? khusus : state.menuActive.filter(m => m.channel_id == null);
   opts.forEach(m => sel.appendChild(new Option(menuOptionLabel(m), m.id)));
   if (opts.some(m => String(m.id) === prev)) sel.value = prev;
 }
