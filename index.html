@@ -52,6 +52,9 @@
   .btn.danger{background:#fff; color:var(--bad); border-color:#E9B8B5}
   .btn.danger:hover{background:var(--bad-wash)}
   .btn.mini{padding:5px 11px; font-size:12.5px; border-radius:8px}
+  a.btn{text-decoration:none}
+  .btn.admin-link{background:var(--yellow); border-color:var(--yellow); color:var(--ink)}
+  .btn.admin-link:hover{background:#E5A400; border-color:#E5A400}
   .iconbtn{
     width:38px; height:38px; border-radius:50%; border:2px solid var(--blue-line); background:#fff; cursor:pointer;
     font-weight:800; font-size:16px; color:var(--blue); display:grid; place-items:center; line-height:1;
@@ -405,7 +408,7 @@ const mShort = i => MONTHS_ID[i].slice(0, 3);
 
 const now0 = new Date();
 const state = {
-  me: null, profiles: [], tasks: [], events: [], eventsOk: true,
+  me: null, profiles: [], tasks: [], events: [], eventsOk: true, isAdmin: false,
   view: 'overview', selectedId: null,
   cal: { y: now0.getFullYear(), m: now0.getMonth() },
   att: { userId: null, y: now0.getFullYear(), m: now0.getMonth(), rows: {}, ok: true, loading: false }
@@ -511,9 +514,14 @@ async function loadEvents() {
 async function loadAll() {
   const p = await sb.from('profiles').select('*').order('sort_order').order('full_name');
   if (p.error) { toast('Gagal memuat anggota: ' + p.error.message, 'error'); return; }
-  state.profiles = p.data;
   state.me = p.data.find(x => x.id === session.user.id) || null;
-  await Promise.all([loadTasks(), loadEvents()]);
+  /* Akun khusus admin (show_in_team = false) tidak tampil di daftar tim.
+     Kalau kolomnya belum ada di database, semua anggota tetap tampil seperti biasa. */
+  state.profiles = p.data.filter(x => x.show_in_team !== false || (state.me && x.id === state.me.id));
+  /* Tombol Dashboard Admin hanya untuk akun di tabel admin_dopa. Ini cuma soal tampilan;
+     pengamannya sungguhan ada di database (RLS) dan di mitra.html. */
+  const [adm] = await Promise.all([sb.rpc('is_admin_dopa'), loadTasks(), loadEvents()]);
+  state.isAdmin = !!(adm && !adm.error && adm.data === true);
 }
 
 function ensureAtt() {
@@ -636,6 +644,7 @@ function renderApp() {
     <div class="me">
       <div class="me-text"><b>${esc(me.full_name)}</b> <small>${esc(me.job_title || '')}</small></div>
       ${avatar(me)}
+      ${state.isAdmin ? `<a class="btn mini admin-link" href="mitra.html">Dashboard Admin</a>` : ''}
       <button class="btn ghost mini" data-action="logout">Keluar</button>
     </div>
   </header>

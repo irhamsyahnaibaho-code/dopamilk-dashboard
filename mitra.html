@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mitra PNDI · Dopamilk</title>
+<title>Dashboard Admin · Dopamilk</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧋</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf-autotable.min.js"></script>
 <style>
@@ -151,7 +151,11 @@ button.mini.ghost{color:var(--bad);border-color:var(--bad-bg)}
 .pj-form label{font-size:12px;font-weight:600;color:var(--navy)}
 .pj-form select,.pj-form input{width:100%;font-size:13px;padding:8px 10px;border:1.5px solid var(--line);border-radius:9px;background:#fff}
 .pj-form .f.wide{grid-column:span 2}
-@media (max-width:900px){.pj-form{grid-template-columns:repeat(2,1fr)}.pj-form .f.wide{grid-column:span 2}}
+.pj-form .f.w3{grid-column:span 3}
+@media (max-width:900px){.pj-form{grid-template-columns:repeat(2,1fr)}.pj-form .f.wide,.pj-form .f.w3{grid-column:span 2}}
+.pj-form select:disabled,.pj-form input:disabled{background:#F4EFE6;color:var(--ink-soft)}
+.pj-prev{font-size:13px;font-weight:600;color:var(--navy);background:var(--cream);border:1px dashed var(--line);border-radius:9px;padding:8px 10px;min-height:37px;display:flex;align-items:center}
+.pj-prev.err{color:var(--bad);background:var(--bad-bg);border-color:transparent}
 .chtag{display:inline-block;border-radius:7px;padding:2px 8px;font-size:11.5px;font-weight:700}
 .chtag.outlet{background:#E7F0FB;color:#1C5DA6}
 .chtag.event{background:#F3E8FB;color:#7A2FB0}
@@ -163,6 +167,11 @@ button.mini.ghost{color:var(--bad);border-color:var(--bad-bg)}
 button.btn-sm{background:var(--navy);color:#fff;border:none;border-radius:9px;padding:8px 16px;font-size:13px;font-weight:700}
 button.btn-sm.ghost{background:#fff;color:var(--navy);border:1.5px solid var(--line)}
 button.btn-sm:disabled{opacity:.55}
+header.top a.back{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:7px 16px;font-size:13px;text-decoration:none;white-space:nowrap}
+header.top a.back:hover{background:rgba(255,255,255,.22)}
+.chip.has-date{border-radius:14px;padding:4px 13px;text-align:center;line-height:1.25}
+.chip small{display:block;font-size:10.5px;font-weight:500;opacity:.75}
+.login-note a{color:var(--navy)}
 </style>
 </head>
 <body>
@@ -170,7 +179,7 @@ button.btn-sm:disabled{opacity:.55}
 <div id="login-screen">
   <div class="login-card">
     <img src="logo-dopamilk.png" alt="Dopamilk">
-    <h1>Mitra PNDI · Dopa</h1>
+    <h1>Dashboard Admin · Dopa</h1>
     <p class="sub">Masuk dengan akun admin Dopa kamu</p>
     <div id="login-err" class="login-err hidden"></div>
     <form id="login-form">
@@ -178,15 +187,18 @@ button.btn-sm:disabled{opacity:.55}
       <div class="field"><label for="li-pass">Password</label><input id="li-pass" type="password" required autocomplete="current-password"></div>
       <button class="btn-primary" type="submit" id="li-btn">Masuk</button>
     </form>
-    <p class="login-note">Lupa password? Hubungi AL untuk direset lewat Supabase.</p>
+    <a id="deny-back" class="btn-primary hidden" href="index.html" style="display:block;text-decoration:none;padding:12px">Kembali ke Dashboard Tim Dopa</a>
+    <p class="login-note">Lupa password? Hubungi Tim IT untuk direset.</p>
+    <p class="login-note"><a href="index.html">&larr; Ke Dashboard Tim Dopa</a></p>
   </div>
 </div>
 
 <div id="app" class="hidden">
   <header class="top">
     <img src="logo-dopamilk.png" alt="Dopamilk">
-    <div class="title">Mitra PNDI<small id="hdr-sub">Gelombang 6–13 · Admin Dopa</small></div>
+    <div class="title">Dashboard Admin<small id="hdr-sub">Admin Dopa</small></div>
     <span class="sync off" id="sync-badge"><span class="dot"></span><span id="sync-text">Menghubungkan…</span></span>
+    <a class="back" href="index.html" id="btn-back">&larr; Dashboard Tim</a>
     <button class="logout" id="btn-logout">Keluar</button>
   </header>
 
@@ -361,7 +373,17 @@ Kalau Kakak berkenan, boleh kami jelaskan detailnya? Kalau belum bisa juga tidak
           <div class="f"><label>Bayar</label>
             <select id="pj-bayar"><option>QRIS</option><option>Tunai</option><option>Lainnya</option></select>
           </div>
-          <div class="f wide"><label>Catatan (opsional)</label><input type="text" id="pj-catatan" placeholder="mis. event Rockataini hari ke-2"></div>
+          <div class="f"><label>Diskon</label>
+            <select id="pj-dk-tipe">
+              <option value="">Tanpa diskon</option>
+              <option value="persen">Persen (%)</option>
+              <option value="rupiah">Rupiah (Rp)</option>
+            </select>
+          </div>
+          <div class="f"><label id="pj-dk-label">Nilai diskon</label><input type="number" id="pj-dk-nilai" min="0" step="any" placeholder="0" disabled></div>
+          <div class="f wide"><label>Keterangan diskon</label><input type="text" id="pj-dk-ket" maxlength="120" placeholder="mis. Diskon UTS cut off 15%" disabled></div>
+          <div class="f w3"><label>Catatan (opsional)</label><input type="text" id="pj-catatan" placeholder="mis. event Rockataini hari ke-2"></div>
+          <div class="f wide"><label>Ringkasan harga</label><div class="pj-prev" id="pj-prev">Pilih menu dulu.</div></div>
           <div class="f"><button type="button" class="btn-sm" id="pj-submit" style="width:100%">Simpan</button></div>
         </div>
         <div id="pj-msg"></div>
@@ -404,7 +426,8 @@ Kalau Kakak berkenan, boleh kami jelaskan detailnya? Kalau belum bisa juga tidak
       <div class="tiles">
         <div class="tile"><div class="lab">Total transaksi</div><div class="num" id="pj-t-trx">—</div></div>
         <div class="tile"><div class="lab">Total cup</div><div class="num" id="pj-t-cup">—</div></div>
-        <div class="tile"><div class="lab">Total penjualan</div><div class="num" id="pj-t-rp">—</div></div>
+        <div class="tile"><div class="lab">Total penjualan (setelah diskon)</div><div class="num" id="pj-t-rp">—</div></div>
+        <div class="tile"><div class="lab">Total diskon</div><div class="num" id="pj-t-diskon">—</div></div>
         <div class="tile"><div class="lab">Outlet / Event / Mitra / PNDI</div><div class="num" id="pj-t-split" style="font-size:15px">—</div></div>
       </div>
 
@@ -413,7 +436,7 @@ Kalau Kakak berkenan, boleh kami jelaskan detailnya? Kalau belum bisa juga tidak
         <p class="sub">Termasuk pesanan PNDI (per halaqoh), digabung dengan Outlet/Event/Mitra. Urut dari penjualan terbesar, sesuai rentang di atas.</p>
         <div class="tbl-wrap">
           <table>
-            <thead><tr><th>Channel</th><th>Nama</th><th class="num">Cup</th><th class="num">Rp</th></tr></thead>
+            <thead><tr><th>Channel</th><th>Nama</th><th class="num">Cup</th><th class="num">Diskon</th><th class="num">Rp</th></tr></thead>
             <tbody id="tbl-pj-channel"></tbody>
           </table>
           <p class="empty hidden" id="empty-pj-channel">Belum ada data di rentang ini.</p>
@@ -437,7 +460,7 @@ Kalau Kakak berkenan, boleh kami jelaskan detailnya? Kalau belum bisa juga tidak
         <p class="sub" id="pj-rincian-sub">Sesuai rentang yang dipilih di atas.</p>
         <div class="tbl-wrap">
           <table>
-            <thead><tr><th>Tanggal</th><th>Channel</th><th class="hide-sm">Nama</th><th>Menu</th><th class="num">Jml</th><th class="num hide-sm">Rp</th><th class="hide-sm">Bayar</th><th></th></tr></thead>
+            <thead><tr><th>Tanggal</th><th>Channel</th><th class="hide-sm">Nama</th><th>Menu</th><th class="num">Jml</th><th class="num hide-sm">Diskon</th><th class="num hide-sm">Rp</th><th class="hide-sm">Bayar</th><th></th></tr></thead>
             <tbody id="tbl-pj"></tbody>
           </table>
           <p class="empty hidden" id="empty-pj">Belum ada penjualan tercatat di rentang ini.</p>
@@ -468,6 +491,15 @@ const state = {
 const $ = (sel, root=document) => root.querySelector(sel);
 const $$ = (sel, root=document) => [...root.querySelectorAll(sel)];
 
+/* Isi chip gelombang: "Gel 6" + tanggal gelombang di bawahnya (kalau ada) */
+function setChip(b, label, g){
+  b.textContent = label;
+  if (g && g.tanggal) {
+    b.classList.add('has-date');
+    const sm = document.createElement('small'); sm.textContent = g.tanggal; b.appendChild(sm);
+  }
+}
+
 function showErr(msg){ const e = $('#login-err'); e.textContent = msg; e.classList.remove('hidden'); }
 function hideErr(){ $('#login-err').classList.add('hidden'); }
 
@@ -489,11 +521,7 @@ $('#login-form').addEventListener('submit', async (ev) => {
 
 async function afterLogin(){
   const { data: isAdmin, error } = await sb.rpc('is_admin_dopa');
-  if (error || !isAdmin) {
-    showErr('Email ini belum terdaftar sebagai admin Dopa. Hubungi AL untuk ditambahkan.');
-    await sb.auth.signOut();
-    return;
-  }
+  if (error || !isAdmin) { denyAccess(!!error); return; }
   const { data: { user } } = await sb.auth.getUser();
   state.meEmail = user.email;
   state.authUserId = user.id;
@@ -502,17 +530,32 @@ async function afterLogin(){
     const { data: rowAdmin } = await sb.from('admin_dopa').select('nama').eq('email', user.email).maybeSingle();
     if (rowAdmin && rowAdmin.nama) nama = rowAdmin.nama;
   } catch(e) {}
-  $('#hdr-sub').textContent = 'Halo, ' + nama + ' · Gelombang 6–13';
+  $('#hdr-sub').textContent = 'Halo, ' + nama + ' · Admin Dopa';
   $('#login-screen').classList.add('hidden');
   $('#app').classList.remove('hidden');
   await loadAll();
   subscribeRealtime();
 }
 
+/* Anggota biasa yang nyasar ke halaman ini TIDAK dikeluarkan dari akunnya:
+   login dipakai bersama dengan Dashboard Tim Dopa. Cukup diarahkan kembali. */
+function denyAccess(failed){
+  showErr(failed
+    ? 'Gagal memeriksa akses admin. Muat ulang halaman ini, atau hubungi Tim IT.'
+    : 'Halaman ini khusus admin Dopa. Akun kamu belum terdaftar sebagai admin. Hubungi Tim IT kalau seharusnya punya akses.');
+  $('#login-form').classList.add('hidden');
+  $('#deny-back').classList.remove('hidden');
+  $('#login-screen').classList.remove('hidden');
+  $('#app').classList.add('hidden');
+}
+
 $('#btn-logout').addEventListener('click', async () => {
   await sb.auth.signOut();
   location.reload();
 });
+
+/* Login dipakai bersama Dashboard Tim Dopa: kalau keluar di tab lain, halaman ini ikut tertutup. */
+sb.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_OUT') location.reload(); });
 
 /* on load: check existing session */
 (async () => {
@@ -666,9 +709,9 @@ function renderChart(){
 
 function renderChips(){
   const box = $('#gel-chips'); box.innerHTML = '';
-  const mk = (val,label) => { const b=document.createElement('button'); b.className='chip'+(state.gel===val?' on':''); b.textContent=label; b.addEventListener('click',()=>{state.gel=val; renderChips(); renderGel();}); return b; };
+  const mk = (val,label,g) => { const b=document.createElement('button'); b.className='chip'+(state.gel===val?' on':''); setChip(b,label,g); b.addEventListener('click',()=>{state.gel=val; renderChips(); renderGel();}); return b; };
   box.appendChild(mk('all','Semua'));
-  state.gelombang.forEach(g => box.appendChild(mk(String(g.nomor), 'Gel '+g.nomor)));
+  state.gelombang.forEach(g => box.appendChild(mk(String(g.nomor), 'Gel '+g.nomor, g)));
 }
 
 /* ---------------- RENDER: tables ---------------- */
@@ -861,9 +904,9 @@ async function loadRewardView(){
 
 function renderRewardChips(){
   const box = $('#rw-gel-chips'); box.innerHTML = '';
-  const mk = (val,label) => { const b=document.createElement('button'); b.className='chip'+(state.rwGel===val?' on':''); b.textContent=label; b.addEventListener('click',()=>{state.rwGel=val; renderRewardChips(); renderReward();}); return b; };
+  const mk = (val,label,g) => { const b=document.createElement('button'); b.className='chip'+(state.rwGel===val?' on':''); setChip(b,label,g); b.addEventListener('click',()=>{state.rwGel=val; renderRewardChips(); renderReward();}); return b; };
   box.appendChild(mk('all','Semua'));
-  state.gelombang.forEach(g => box.appendChild(mk(String(g.nomor), 'Gel '+g.nomor)));
+  state.gelombang.forEach(g => box.appendChild(mk(String(g.nomor), 'Gel '+g.nomor, g)));
 }
 
 function genKodeVoucher(r){
@@ -975,9 +1018,9 @@ state.riwPoQ = '';
 
 function renderRiwPoChips(){
   const box = $('#riw-gel-chips'); box.innerHTML = '';
-  const mk = (val,label) => { const b=document.createElement('button'); b.className='chip'+(state.riwPoGel===val?' on':''); b.textContent=label; b.addEventListener('click',()=>{state.riwPoGel=val; renderRiwPoChips(); renderRiwayatPesanan();}); return b; };
+  const mk = (val,label,g) => { const b=document.createElement('button'); b.className='chip'+(state.riwPoGel===val?' on':''); setChip(b,label,g); b.addEventListener('click',()=>{state.riwPoGel=val; renderRiwPoChips(); renderRiwayatPesanan();}); return b; };
   box.appendChild(mk('all','Semua'));
-  state.gelombang.forEach(g => box.appendChild(mk(String(g.nomor), 'Gel '+g.nomor)));
+  state.gelombang.forEach(g => box.appendChild(mk(String(g.nomor), 'Gel '+g.nomor, g)));
 }
 
 async function loadLaporan(){
@@ -1052,6 +1095,43 @@ function fillMenuSelectPj(channelId){
   const opts = khusus.length > 0 ? khusus : state.menuActive.filter(m => m.channel_id == null);
   opts.forEach(m => sel.appendChild(new Option(menuOptionLabel(m), m.id)));
   if (opts.some(m => String(m.id) === prev)) sel.value = prev;
+  updatePjPreview();
+}
+
+/* ---- diskon: hitung & ringkasan harga ---- */
+function pjDiskonCalc(){
+  const m = state.menuAll.find(x => String(x.id) === String($('#pj-menu').value)) || {};
+  const jumlah = Math.max(1, Number($('#pj-jumlah').value) || 1);
+  const sub = (m.harga || 0) * jumlah;
+  const tipe = $('#pj-dk-tipe').value;
+  const raw = $('#pj-dk-nilai').value;
+  const nilai = Number(raw);
+  let rp = 0, err = '';
+  if (tipe === 'persen') {
+    if (!(nilai > 0 && nilai <= 100)) err = 'Diskon persen harus lebih dari 0 dan paling besar 100.';
+    else rp = Math.round(sub * nilai / 100);
+  } else if (tipe === 'rupiah') {
+    if (!(nilai > 0)) err = 'Isi nominal diskon dulu.';
+    else if (nilai > sub) err = 'Diskon tidak boleh lebih besar dari subtotal (Rp' + fmtN(sub) + ').';
+    else rp = Math.round(nilai);
+  }
+  return { m, jumlah, sub, tipe, raw, nilai, rp, err, net: Math.max(0, sub - rp) };
+}
+
+function updatePjPreview(){
+  const tipe = $('#pj-dk-tipe').value;
+  const nInp = $('#pj-dk-nilai'), kInp = $('#pj-dk-ket');
+  nInp.disabled = !tipe; kInp.disabled = !tipe;
+  if (!tipe) { nInp.value = ''; kInp.value = ''; }
+  $('#pj-dk-label').textContent = tipe === 'persen' ? 'Nilai diskon (%)' : tipe === 'rupiah' ? 'Nilai diskon (Rp)' : 'Nilai diskon';
+  const c = pjDiskonCalc();
+  const box = $('#pj-prev');
+  box.classList.remove('err');
+  if (!c.m.id) { box.textContent = 'Pilih menu dulu.'; return; }
+  if (tipe && c.raw !== '' && c.err) { box.classList.add('err'); box.textContent = c.err; return; }
+  box.textContent = c.rp > 0
+    ? 'Subtotal Rp' + fmtN(c.sub) + ' − diskon Rp' + fmtN(c.rp) + ' = Rp' + fmtN(c.net)
+    : 'Total Rp' + fmtN(c.sub);
 }
 
 async function initPenjualan(){
@@ -1065,6 +1145,10 @@ async function initPenjualan(){
 
   $('#pj-tipe').addEventListener('change', e => { state.pjTipe = e.target.value; fillChannelSelect(); });
   $('#pj-channel').addEventListener('change', e => { fillMenuSelectPj(e.target.value); });
+  $('#pj-menu').addEventListener('change', updatePjPreview);
+  $('#pj-jumlah').addEventListener('input', updatePjPreview);
+  $('#pj-dk-tipe').addEventListener('change', updatePjPreview);
+  $('#pj-dk-nilai').addEventListener('input', updatePjPreview);
 
   $('#pj-submit').addEventListener('click', submitPenjualan);
   $('#ch-submit').addEventListener('click', submitChannel);
@@ -1173,12 +1257,24 @@ async function submitPenjualan(){
     harga_satuan: m.harga || 0, metode_bayar: bayar, catatan,
     dicatat_oleh: state.authUserId || null
   };
+  /* kolom diskon hanya dikirim kalau memang ada diskon, jadi penjualan biasa tetap jalan */
+  const dk = pjDiskonCalc();
+  if (dk.tipe && dk.err) { msg.innerHTML = '<div class="msg-err">' + dk.err + '</div>'; return; }
+  if (dk.tipe) {
+    payload.diskon_tipe = dk.tipe;
+    payload.diskon_nilai = dk.nilai;
+    payload.diskon_rp = dk.rp;
+    payload.diskon_ket = ($('#pj-dk-ket').value || '').trim().slice(0, 120) || null;
+  }
   const btn = $('#pj-submit'); btn.disabled = true; btn.textContent = 'Menyimpan…';
   const { error } = await sb.from('penjualan_harian').insert(payload);
   btn.disabled = false; btn.textContent = 'Simpan';
-  if (error) { msg.innerHTML = '<div class="msg-err">Gagal menyimpan: ' + error.message + '</div>'; return; }
+  if (error) {
+    const hint = /diskon/i.test(error.message || '') ? 'Fitur diskon belum aktif di database. Jalankan supabase-upgrade-2.sql dulu.' : error.message;
+    msg.innerHTML = '<div class="msg-err">Gagal menyimpan: ' + hint + '</div>'; return;
+  }
   msg.innerHTML = '<div class="msg-ok">Penjualan tersimpan ✅</div>';
-  $('#pj-jumlah').value = 1; $('#pj-catatan').value = '';
+  $('#pj-jumlah').value = 1; $('#pj-catatan').value = ''; $('#pj-dk-tipe').value = ''; updatePjPreview();
   setTimeout(() => { msg.innerHTML=''; }, 3000);
   await loadPenjualan();
   renderPenjualan();
@@ -1219,12 +1315,21 @@ function penjualanInRange(range){
 function channelOf(id){ return state.channels.find(c => Number(c.id) === Number(id)) || { tipe:'?', nama:'Channel dihapus' }; }
 function menuOf(id){ return state.menuAll.find(m => Number(m.id) === Number(id)) || { nama:'Menu dihapus' }; }
 
+function diskonKet(r){
+  if (!(Number(r.diskon_rp || 0) > 0)) return '';
+  const a = r.diskon_tipe === 'persen' ? fmtN(Number(r.diskon_nilai)) + '%' : '';
+  return [a, r.diskon_ket].filter(Boolean).join(' · ');
+}
+
 function gabunganRows(){
   const menuMap = new Map(state.menuAll.map(m => [m.id, m]));
   const pj = state.penjualan.map(r => {
     const ch = channelOf(r.channel_id);
+    const sub = Number(r.total ?? ((r.jumlah||0) * (r.harga_satuan||0)));
+    const diskon = Number(r.diskon_rp || 0);
     return { id:'pj-'+r.id, _src:'pj', _rawId:r.id, tanggal:r.tanggal, chTipe:ch.tipe, chNama:ch.nama,
-      menuNama: menuOf(r.menu_id).nama, jumlah:r.jumlah, total:Number(r.total||0), bayar:r.metode_bayar };
+      menuNama: menuOf(r.menu_id).nama, jumlah:r.jumlah, sub, diskon, diskonKet: diskonKet(r),
+      total: Math.max(0, sub - diskon), bayar:r.metode_bayar };
   });
   const pndi = (state.lapPesanan||[]).map(p => {
     const info = state.rows.find(x => x.id === p.penugasan_id) || {};
@@ -1232,6 +1337,7 @@ function gabunganRows(){
     return { id:'pndi-'+p.id, _src:'pndi', _rawId:p.id, tanggal:p.tanggal, chTipe:'pndi',
       chNama:'PNDI · Gel '+(info.gelombang??'?')+' Halaqoh '+(info.kelompok??'?'),
       menuNama: m.nama || 'Menu dihapus', jumlah:p.jumlah, total:(m.harga||0)*p.jumlah,
+      sub:(m.harga||0)*p.jumlah, diskon:0, diskonKet:'',
       bayar: p.bayar==='Lunas QRIS' ? 'QRIS' : 'Belum bayar' };
   });
   return [...pj, ...pndi];
@@ -1253,25 +1359,26 @@ function renderPenjualan(){
   $('#pj-rincian-sub').textContent = 'Rentang: ' + range.label;
   const rows = gabunganInRange(range).sort((a,b) => b.tanggal.localeCompare(a.tanggal) || String(b.id).localeCompare(String(a.id)));
 
-  let totalCup = 0, totalRp = 0;
+  let totalCup = 0, totalRp = 0, totalDiskon = 0;
   const byTipe = { outlet:0, event:0, mitra:0, pndi:0 };
-  rows.forEach(r => { totalCup += r.jumlah; totalRp += Number(r.total||0); if (byTipe[r.chTipe] != null) byTipe[r.chTipe] += Number(r.total||0); });
+  rows.forEach(r => { totalCup += r.jumlah; totalRp += Number(r.total||0); totalDiskon += Number(r.diskon||0); if (byTipe[r.chTipe] != null) byTipe[r.chTipe] += Number(r.total||0); });
 
   $('#pj-t-trx').textContent = fmtN(rows.length);
   $('#pj-t-cup').textContent = fmtN(totalCup);
   $('#pj-t-rp').textContent = 'Rp' + fmtN(totalRp);
+  $('#pj-t-diskon').textContent = 'Rp' + fmtN(totalDiskon);
   $('#pj-t-split').textContent = 'Rp' + fmtN(byTipe.outlet) + ' / Rp' + fmtN(byTipe.event) + ' / Rp' + fmtN(byTipe.mitra) + ' / Rp' + fmtN(byTipe.pndi);
 
   /* rekap per channel/mitra */
   const byCh = new Map();
-  rows.forEach(r => { const key = r.chTipe+'|'+r.chNama; if(!byCh.has(key)) byCh.set(key, { tipe:r.chTipe, nama:r.chNama, cup:0, rp:0 }); const o=byCh.get(key); o.cup+=r.jumlah; o.rp+=Number(r.total||0); });
+  rows.forEach(r => { const key = r.chTipe+'|'+r.chNama; if(!byCh.has(key)) byCh.set(key, { tipe:r.chTipe, nama:r.chNama, cup:0, rp:0, dk:0 }); const o=byCh.get(key); o.cup+=r.jumlah; o.rp+=Number(r.total||0); o.dk+=Number(r.diskon||0); });
   const tbCh = $('#tbl-pj-channel'); tbCh.innerHTML='';
   const chRows = [...byCh.values()].sort((a,b)=>b.rp-a.rp);
   $('#empty-pj-channel').classList.toggle('hidden', chRows.length>0);
   chRows.forEach(c => {
     const tr = document.createElement('tr');
     const ctd = document.createElement('td'); const tag=document.createElement('span'); tag.className='chtag '+(c.tipe==='pndi'?'mitra':c.tipe); tag.textContent=c.tipe; ctd.appendChild(tag); tr.appendChild(ctd);
-    tr.append(td(c.nama,'nm'), td(c.cup,'num'), td('Rp'+fmtN(c.rp),'num'));
+    tr.append(td(c.nama,'nm'), td(c.cup,'num'), td(c.dk>0 ? '−Rp'+fmtN(c.dk) : '—','num'), td('Rp'+fmtN(c.rp),'num'));
     tbCh.appendChild(tr);
   });
 
@@ -1290,7 +1397,9 @@ function renderPenjualan(){
     const tr = document.createElement('tr');
     tr.append(td(fmtIDShort(r.tanggal)));
     const ctd = document.createElement('td'); const tag = document.createElement('span'); tag.className='chtag '+(r.chTipe==='pndi'?'mitra':r.chTipe); tag.textContent=r.chTipe; ctd.appendChild(tag); tr.appendChild(ctd);
-    tr.append(td(r.chNama,'hide-sm'), td(r.menuNama,'nm'), td(r.jumlah,'num'), td('Rp'+fmtN(r.total||0),'num hide-sm'));
+    const dkTd = td(r.diskon>0 ? '−Rp'+fmtN(r.diskon) : '—', 'num hide-sm');
+    if (r.diskonKet) { const sp=document.createElement('span'); sp.className='when'; sp.textContent=r.diskonKet; dkTd.appendChild(sp); }
+    tr.append(td(r.chNama,'hide-sm'), td(r.menuNama,'nm'), td(r.jumlah,'num'), dkTd, td('Rp'+fmtN(r.total||0),'num hide-sm'));
     const bTd = document.createElement('td'); bTd.className='hide-sm'; const pill=document.createElement('span'); pill.className='pill'; pill.textContent=r.bayar; bTd.appendChild(pill); tr.appendChild(bTd);
     const aTd = document.createElement('td'); const del = document.createElement('button'); del.className='mini ghost'; del.type='button'; del.textContent='Hapus';
     del.addEventListener('click', () => r._src==='pj' ? deletePenjualan(r._rawId) : deletePndiPesananFromPenjualan(r._rawId));
@@ -1315,22 +1424,24 @@ function downloadPenjualanPdf(){
   doc.setTextColor(30,30,30);
   let totalCup = 0, totalRp = 0;
   const byTipe = { outlet:0, event:0, mitra:0, pndi:0 };
-  rows.forEach(r => { totalCup += r.jumlah; totalRp += Number(r.total||0); if (byTipe[r.chTipe]!=null) byTipe[r.chTipe]+=Number(r.total||0); });
+  let totalDiskon = 0;
+  rows.forEach(r => { totalCup += r.jumlah; totalRp += Number(r.total||0); totalDiskon += Number(r.diskon||0); if (byTipe[r.chTipe]!=null) byTipe[r.chTipe]+=Number(r.total||0); });
 
   doc.setFontSize(10);
   doc.text('Total transaksi: ' + rows.length, 14, 33);
   doc.text('Total cup: ' + fmtN(totalCup), 14, 39);
-  doc.text('Total penjualan: Rp' + fmtN(totalRp), 14, 45);
+  doc.text('Total penjualan (setelah diskon): Rp' + fmtN(totalRp), 14, 45);
   doc.text('Outlet Rp' + fmtN(byTipe.outlet) + '  ·  Event Rp' + fmtN(byTipe.event) + '  ·  Mitra Rp' + fmtN(byTipe.mitra) + '  ·  PNDI Rp' + fmtN(byTipe.pndi), 14, 51);
+  doc.text('Total diskon: Rp' + fmtN(totalDiskon), 14, 57);
 
   doc.autoTable({
-    startY: 58,
-    head: [['Tanggal','Channel','Nama','Menu','Jml','Bayar','Total (Rp)']],
-    body: rows.map(r => [fmtIDShort(r.tanggal), r.chTipe, r.chNama, r.menuNama, r.jumlah, r.bayar, fmtN(r.total||0)]),
+    startY: 64,
+    head: [['Tanggal','Channel','Nama','Menu','Jml','Bayar','Diskon (Rp)','Total (Rp)']],
+    body: rows.map(r => [fmtIDShort(r.tanggal), r.chTipe, r.chNama, r.menuNama, r.jumlah, r.bayar, r.diskon>0 ? '-'+fmtN(r.diskon) : '-', fmtN(r.total||0)]),
     styles: { fontSize: 8, cellPadding: 2.5 },
     headStyles: { fillColor: navy, textColor: 255 },
     alternateRowStyles: { fillColor: [251,243,231] },
-    columnStyles: { 4:{halign:'right'}, 6:{halign:'right'} }
+    columnStyles: { 4:{halign:'right'}, 6:{halign:'right'}, 7:{halign:'right'} }
   });
 
   let y = doc.lastAutoTable.finalY + 10;
