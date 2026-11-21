@@ -1166,7 +1166,7 @@ function attStats() {
     if (dow !== 0) s.work++;
     if (rec) {
       s[rec.status]++;
-      if (rec.status === 'lembur') s.hours += Number(rec.overtime_hours) || 0;
+      if (rec.status === 'lembur') { s.masuk++; s.hours += Number(rec.overtime_hours) || 0; }   // lembur = masuk + lembur
     } else if (dow !== 0 && date <= today) s.empty++;
   }
   s.hours = Math.round(s.hours * 10) / 10;
@@ -1197,8 +1197,9 @@ function renderAttendance() {
   let rows = '';
   for (let d = 1; d <= days; d++) {
     const date = ymd(a.y, a.m, d), dow = new Date(a.y, a.m, d).getDay(), rec = a.rows[date], off = dow === 0;
-    const btn = k => `<button class="seg-btn${rec && rec.status === k ? ' on ' + k : ''}" data-action="att-set" data-date="${date}" data-status="${k}"
-        aria-pressed="${!!(rec && rec.status === k)}" ${editable ? '' : 'disabled'}>${ATT_LABEL[k]}</button>`;
+    const lit = k => !!(rec && (rec.status === k || (k === 'masuk' && rec.status === 'lembur')));
+    const btn = k => `<button class="seg-btn${lit(k) ? ' on ' + k : ''}" data-action="att-set" data-date="${date}" data-status="${k}"
+        aria-pressed="${lit(k)}" ${editable ? '' : 'disabled'}>${ATT_LABEL[k]}</button>`;
     rows += `<div class="att-row${off ? ' off' : ''}${date === today ? ' today' : ''}">
       <div class="att-date"><b>${d}</b><span>${DAYS_ID[dow]}</span></div>
       <div class="att-hrs-txt">${off ? 'Libur' : CONFIG.WORK_HOURS_TEXT}</div>
@@ -1228,7 +1229,7 @@ function renderAttendance() {
     ${a.loading ? '<p class="loading" style="margin-bottom:10px">Memuat absensi...</p>' : ''}
     <div class="att-sum" aria-label="Ringkasan bulan ini">
       <div class="att-pill"><b>${st.work}</b> <small>hari kerja (Sen–Sab)</small></div>
-      <div class="att-pill"><b>${st.masuk}</b> <small>masuk</small></div>
+      <div class="att-pill"><b>${st.masuk}</b> <small>masuk (termasuk lembur)</small></div>
       <div class="att-pill"><b>${st.lembur}</b> <small>lembur (${st.hours} jam)</small></div>
       <div class="att-pill"><b>${st.cuti}</b> <small>cuti</small></div>
       <div class="att-pill${st.empty ? ' warn' : ''}"><b>${st.empty}</b> <small>belum diisi</small></div>
@@ -1241,16 +1242,22 @@ async function attSet(date, status) {
   if (!canEditAtt(a.userId)) return;
   const cur = a.rows[date];
   const prev = cur ? { ...cur } : null;
-  if (cur && cur.status === status) {                      // klik lagi = kosongkan
+  const curS = cur ? cur.status : null;
+  // 'lembur' = masuk + lembur. Masuk nyala otomatis saat Lembur aktif.
+  if (status === 'masuk' && curS === 'lembur') { toast('Lembur masih aktif. Matikan Lembur dulu kalau mau mengosongkan Masuk.'); return; }
+  const target = (status === 'lembur' && curS === 'lembur') ? 'masuk' : status;   // klik Lembur lagi = tetap masuk, lembur dibatalkan
+  const hasOt = !!(cur && (cur.overtime_note || cur.overtime_hours));
+  if (status === 'cuti' && curS === 'lembur' && hasOt && !confirm('Catatan lembur hari ini akan dihapus. Lanjut ubah ke Cuti?')) return;
+  if (curS === status && status !== 'lembur') {            // klik lagi = kosongkan
     delete a.rows[date]; renderMain();
     const { error } = await sb.from('attendance').delete().eq('user_id', a.userId).eq('work_date', date);
     if (error) { a.rows[date] = prev; renderMain(); toast('Gagal mengosongkan. ' + error.message, 'error'); }
     return;
   }
   const payload = {
-    user_id: a.userId, work_date: date, status,
-    overtime_note: status === 'lembur' && cur ? cur.overtime_note : null,
-    overtime_hours: status === 'lembur' && cur ? cur.overtime_hours : null
+    user_id: a.userId, work_date: date, status: target,
+    overtime_note: target === 'lembur' && cur ? cur.overtime_note : null,
+    overtime_hours: target === 'lembur' && cur ? cur.overtime_hours : null
   };
   a.rows[date] = { ...(cur || {}), ...payload }; renderMain();
   const { data, error } = await sb.from('attendance').upsert(payload, { onConflict: 'user_id,work_date' }).select();
@@ -1259,7 +1266,7 @@ async function attSet(date, status) {
     renderMain(); toast('Absensi belum tersimpan. ' + (error ? error.message : 'Tidak ada izin.'), 'error'); return;
   }
   a.rows[date] = data[0];
-  if (status === 'lembur') renderMain();
+  if (target === 'lembur' || curS === 'lembur') renderMain();
 }
 
 async function attSaveOt(date) {
@@ -1314,14 +1321,14 @@ function attDownload() {
     aoa.push([
       d, pad(d) + '/' + pad(a.m + 1) + '/' + a.y, DAYS_FULL[dow],
       dow === 0 ? 'Libur' : CONFIG.WORK_HOURS_TEXT,
-      rec ? ATT_LABEL[rec.status] : (dow === 0 ? 'Libur' : 'Belum diisi'),
+      rec ? (rec.status === 'lembur' ? 'Masuk + Lembur' : ATT_LABEL[rec.status]) : (dow === 0 ? 'Libur' : 'Belum diisi'),
       rec && rec.status === 'lembur' ? (rec.overtime_note || '') : '',
       rec && rec.status === 'lembur' && rec.overtime_hours != null ? Number(rec.overtime_hours) : ''
     ]);
   }
   const st = attStats();
   aoa.push([], ['Ringkasan'],
-    ['Hari kerja (Senin–Sabtu)', st.work], ['Masuk (hari)', st.masuk], ['Lembur (hari)', st.lembur],
+    ['Hari kerja (Senin–Sabtu)', st.work], ['Masuk (hari, termasuk hari lembur)', st.masuk], ['Lembur (hari)', st.lembur],
     ['Total jam lembur', st.hours], ['Cuti (hari)', st.cuti], ['Belum diisi sampai hari ini (hari)', st.empty]);
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   ws['!cols'] = [{ wch: 8 }, { wch: 13 }, { wch: 10 }, { wch: 13 }, { wch: 13 }, { wch: 52 }, { wch: 19 }];
