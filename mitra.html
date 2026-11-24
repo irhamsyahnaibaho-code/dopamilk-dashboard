@@ -371,7 +371,17 @@ Kalau Kakak berkenan, boleh kami jelaskan detailnya? Kalau belum bisa juga tidak
           <div class="f wide"><label>Menu</label><select id="pj-menu"></select></div>
           <div class="f"><label>Jumlah (cup)</label><input type="number" id="pj-jumlah" min="1" value="1"></div>
           <div class="f"><label>Bayar</label>
-            <select id="pj-bayar"><option>QRIS</option><option>Tunai</option><option>Lainnya</option></select>
+            <select id="pj-bayar"><option>QRIS</option><option>Tunai</option><option>ShopeeFood</option><option>GoFood</option><option>Lainnya</option></select>
+          </div>
+          <div class="f"><label>Jenis harga</label>
+            <select id="pj-harga">
+              <option value="">Harga normal</option>
+              <option value="tim">Jatah Tim Dopa</option>
+            </select>
+          </div>
+          <div class="f wide hidden" id="pj-tim-wrap"><label>Nama anggota tim</label>
+            <input type="text" id="pj-tim-nama" list="pj-tim-list" maxlength="60" placeholder="mis. Fitri" autocomplete="off">
+            <datalist id="pj-tim-list"></datalist>
           </div>
           <div class="f"><label>Diskon</label>
             <select id="pj-dk-tipe">
@@ -428,6 +438,7 @@ Kalau Kakak berkenan, boleh kami jelaskan detailnya? Kalau belum bisa juga tidak
         <div class="tile"><div class="lab">Total cup</div><div class="num" id="pj-t-cup">—</div></div>
         <div class="tile"><div class="lab">Total penjualan (setelah diskon)</div><div class="num" id="pj-t-rp">—</div></div>
         <div class="tile"><div class="lab">Total diskon</div><div class="num" id="pj-t-diskon">—</div></div>
+        <div class="tile"><div class="lab">Jatah Tim Dopa (cup)</div><div class="num" id="pj-t-tim">—</div></div>
         <div class="tile"><div class="lab">Outlet / Event / Mitra / PNDI</div><div class="num" id="pj-t-split" style="font-size:15px">—</div></div>
       </div>
 
@@ -479,6 +490,8 @@ const STATUS = ['Belum dihubungi','Sudah dihubungi','Tertarik','Menolak'];
 const ST_CLASS = {'Belum dihubungi':'s-belum','Sudah dihubungi':'s-sudah','Tertarik':'s-tertarik','Menolak':'s-menolak'};
 const ST_COLOR = {'Belum dihubungi':'#B9ADA0','Sudah dihubungi':'#F5A524','Tertarik':'#1E8E5A','Menolak':'#C2403A'};
 const fmtN = (n) => new Intl.NumberFormat('id-ID').format(n);
+
+const HARGA_TIM = 6000;   /* harga jatah Tim Dopa (HPP) per cup, semua menu */
 
 const state = {
   gel: 'all', jenis: '', status: '', q: '',
@@ -1102,7 +1115,8 @@ function fillMenuSelectPj(channelId){
 function pjDiskonCalc(){
   const m = state.menuAll.find(x => String(x.id) === String($('#pj-menu').value)) || {};
   const jumlah = Math.max(1, Number($('#pj-jumlah').value) || 1);
-  const sub = (m.harga || 0) * jumlah;
+  const tim = $('#pj-harga').value === 'tim';
+  const sub = (tim ? HARGA_TIM : (m.harga || 0)) * jumlah;
   const tipe = $('#pj-dk-tipe').value;
   const raw = $('#pj-dk-nilai').value;
   const nilai = Number(raw);
@@ -1115,10 +1129,15 @@ function pjDiskonCalc(){
     else if (nilai > sub) err = 'Diskon tidak boleh lebih besar dari subtotal (Rp' + fmtN(sub) + ').';
     else rp = Math.round(nilai);
   }
-  return { m, jumlah, sub, tipe, raw, nilai, rp, err, net: Math.max(0, sub - rp) };
+  return { m, jumlah, sub, tim, tipe, raw, nilai, rp, err, net: Math.max(0, sub - rp) };
 }
 
 function updatePjPreview(){
+  /* jatah Tim: harga tetap, tidak bisa digabung dengan diskon */
+  const isTim = $('#pj-harga').value === 'tim';
+  $('#pj-tim-wrap').classList.toggle('hidden', !isTim);
+  $('#pj-dk-tipe').disabled = isTim;
+  if (isTim) $('#pj-dk-tipe').value = '';
   const tipe = $('#pj-dk-tipe').value;
   const nInp = $('#pj-dk-nilai'), kInp = $('#pj-dk-ket');
   nInp.disabled = !tipe; kInp.disabled = !tipe;
@@ -1129,9 +1148,19 @@ function updatePjPreview(){
   box.classList.remove('err');
   if (!c.m.id) { box.textContent = 'Pilih menu dulu.'; return; }
   if (tipe && c.raw !== '' && c.err) { box.classList.add('err'); box.textContent = c.err; return; }
-  box.textContent = c.rp > 0
-    ? 'Subtotal Rp' + fmtN(c.sub) + ' − diskon Rp' + fmtN(c.rp) + ' = Rp' + fmtN(c.net)
-    : 'Total Rp' + fmtN(c.sub);
+  box.textContent = c.tim
+    ? 'Jatah Tim Dopa: Rp' + fmtN(HARGA_TIM) + ' × ' + c.jumlah + ' cup = Rp' + fmtN(c.sub)
+    : c.rp > 0
+      ? 'Subtotal Rp' + fmtN(c.sub) + ' − diskon Rp' + fmtN(c.rp) + ' = Rp' + fmtN(c.net)
+      : 'Total Rp' + fmtN(c.sub);
+}
+
+async function loadTimNames(){
+  try {
+    const { data } = await sb.from('profiles').select('full_name,show_in_team');
+    const dl = $('#pj-tim-list'); dl.innerHTML = '';
+    (data || []).filter(p => p.full_name && p.show_in_team !== false).forEach(p => { const o = document.createElement('option'); o.value = p.full_name; dl.appendChild(o); });
+  } catch (e) { /* daftar saran saja; boleh ketik manual */ }
 }
 
 async function initPenjualan(){
@@ -1148,6 +1177,9 @@ async function initPenjualan(){
   $('#pj-menu').addEventListener('change', updatePjPreview);
   $('#pj-jumlah').addEventListener('input', updatePjPreview);
   $('#pj-dk-tipe').addEventListener('change', updatePjPreview);
+  $('#pj-harga').addEventListener('change', updatePjPreview);
+  $('#pj-harga').options[1].textContent = 'Jatah Tim Dopa (Rp' + fmtN(HARGA_TIM) + '/cup)';
+  loadTimNames();
   $('#pj-dk-nilai').addEventListener('input', updatePjPreview);
 
   $('#pj-submit').addEventListener('click', submitPenjualan);
@@ -1252,11 +1284,26 @@ async function submitPenjualan(){
   if (!menuId) { msg.innerHTML = '<div class="msg-err">Pilih menu dulu.</div>'; return; }
   if (!tanggal) { msg.innerHTML = '<div class="msg-err">Isi tanggal dulu.</div>'; return; }
   const m = state.menuAll.find(x => String(x.id) === String(menuId)) || {};
+  const tim = $('#pj-harga').value === 'tim';
+  let timNama = '';
+  if (tim) {
+    timNama = ($('#pj-tim-nama').value || '').trim().replace(/\s+/g, ' ').slice(0, 60);
+    if (!timNama) { msg.innerHTML = '<div class="msg-err">Isi nama anggota tim dulu.</div>'; return; }
+    const saran = [...$('#pj-tim-list').options].find(o => o.value.toLowerCase() === timNama.toLowerCase());
+    if (saran) timNama = saran.value;   /* samakan huruf besar/kecil dengan nama di daftar tim */
+    /* jatah 1 kali per minggu (Senin–Minggu) per orang: ingatkan kalau sudah terpakai */
+    await loadPenjualan();
+    const ws = toISO(startOfWeek(new Date(tanggal + 'T00:00:00'))), we = toISO(endOfWeek(new Date(tanggal + 'T00:00:00')));
+    const dup = state.penjualan.filter(p => p.jenis_harga === 'tim' && String(p.pembeli_tim || '').trim().toLowerCase() === timNama.toLowerCase() && p.tanggal >= ws && p.tanggal <= we);
+    if (dup.length && !confirm(timNama + ' sudah memakai jatah Tim minggu ini (' + dup.map(p => fmtIDShort(p.tanggal) + ', ' + p.jumlah + ' cup').join('; ') + ').\n\nTetap simpan sebagai pembelian jatah Tim lagi?')) return;
+  }
   const payload = {
     tanggal, channel_id: Number(channelId), menu_id: Number(menuId), jumlah,
-    harga_satuan: m.harga || 0, metode_bayar: bayar, catatan,
+    harga_satuan: tim ? HARGA_TIM : (m.harga || 0), metode_bayar: bayar, catatan,
     dicatat_oleh: state.authUserId || null
   };
+  /* kolom jatah Tim hanya dikirim kalau dipakai, jadi penjualan biasa tetap jalan */
+  if (tim) { payload.jenis_harga = 'tim'; payload.pembeli_tim = timNama; }
   /* kolom diskon hanya dikirim kalau memang ada diskon, jadi penjualan biasa tetap jalan */
   const dk = pjDiskonCalc();
   if (dk.tipe && dk.err) { msg.innerHTML = '<div class="msg-err">' + dk.err + '</div>'; return; }
@@ -1270,11 +1317,15 @@ async function submitPenjualan(){
   const { error } = await sb.from('penjualan_harian').insert(payload);
   btn.disabled = false; btn.textContent = 'Simpan';
   if (error) {
-    const hint = /diskon/i.test(error.message || '') ? 'Fitur diskon belum aktif di database. Jalankan supabase-upgrade-2.sql dulu.' : error.message;
+    const em = error.message || '';
+    const hint = /diskon/i.test(em) ? 'Fitur diskon belum aktif di database. Jalankan supabase-upgrade-2.sql dulu.'
+      : /jenis_harga|pembeli_tim/i.test(em) ? 'Fitur jatah Tim belum aktif di database. Jalankan supabase-upgrade-4.sql dulu.'
+      : /metode_bayar|check constraint|enum/i.test(em) ? 'Pilihan bayar ini belum diizinkan di database. Jalankan supabase-upgrade-4.sql dulu.'
+      : em;
     msg.innerHTML = '<div class="msg-err">Gagal menyimpan: ' + hint + '</div>'; return;
   }
   msg.innerHTML = '<div class="msg-ok">Penjualan tersimpan ✅</div>';
-  $('#pj-jumlah').value = 1; $('#pj-catatan').value = ''; $('#pj-dk-tipe').value = ''; updatePjPreview();
+  $('#pj-jumlah').value = 1; $('#pj-catatan').value = ''; $('#pj-dk-tipe').value = ''; $('#pj-harga').value = ''; $('#pj-tim-nama').value = ''; updatePjPreview();
   setTimeout(() => { msg.innerHTML=''; }, 3000);
   await loadPenjualan();
   renderPenjualan();
@@ -1329,7 +1380,8 @@ function gabunganRows(){
     const diskon = Number(r.diskon_rp || 0);
     return { id:'pj-'+r.id, _src:'pj', _rawId:r.id, tanggal:r.tanggal, chTipe:ch.tipe, chNama:ch.nama,
       menuNama: menuOf(r.menu_id).nama, jumlah:r.jumlah, sub, diskon, diskonKet: diskonKet(r),
-      total: Math.max(0, sub - diskon), bayar:r.metode_bayar };
+      total: Math.max(0, sub - diskon), bayar:r.metode_bayar,
+      jenis: r.jenis_harga || '', pembeli: r.pembeli_tim || '' };
   });
   const pndi = (state.lapPesanan||[]).map(p => {
     const info = state.rows.find(x => x.id === p.penugasan_id) || {};
@@ -1337,7 +1389,7 @@ function gabunganRows(){
     return { id:'pndi-'+p.id, _src:'pndi', _rawId:p.id, tanggal:p.tanggal, chTipe:'pndi',
       chNama:'PNDI · Gel '+(info.gelombang??'?')+' Halaqoh '+(info.kelompok??'?'),
       menuNama: m.nama || 'Menu dihapus', jumlah:p.jumlah, total:(m.harga||0)*p.jumlah,
-      sub:(m.harga||0)*p.jumlah, diskon:0, diskonKet:'',
+      sub:(m.harga||0)*p.jumlah, diskon:0, diskonKet:'', jenis:'', pembeli:'',
       bayar: p.bayar==='Lunas QRIS' ? 'QRIS' : 'Belum bayar' };
   });
   return [...pj, ...pndi];
@@ -1359,14 +1411,15 @@ function renderPenjualan(){
   $('#pj-rincian-sub').textContent = 'Rentang: ' + range.label;
   const rows = gabunganInRange(range).sort((a,b) => b.tanggal.localeCompare(a.tanggal) || String(b.id).localeCompare(String(a.id)));
 
-  let totalCup = 0, totalRp = 0, totalDiskon = 0;
+  let totalCup = 0, totalRp = 0, totalDiskon = 0, totalTim = 0;
   const byTipe = { outlet:0, event:0, mitra:0, pndi:0 };
-  rows.forEach(r => { totalCup += r.jumlah; totalRp += Number(r.total||0); totalDiskon += Number(r.diskon||0); if (byTipe[r.chTipe] != null) byTipe[r.chTipe] += Number(r.total||0); });
+  rows.forEach(r => { if (r.jenis === 'tim') totalTim += r.jumlah; totalCup += r.jumlah; totalRp += Number(r.total||0); totalDiskon += Number(r.diskon||0); if (byTipe[r.chTipe] != null) byTipe[r.chTipe] += Number(r.total||0); });
 
   $('#pj-t-trx').textContent = fmtN(rows.length);
   $('#pj-t-cup').textContent = fmtN(totalCup);
   $('#pj-t-rp').textContent = 'Rp' + fmtN(totalRp);
   $('#pj-t-diskon').textContent = 'Rp' + fmtN(totalDiskon);
+  $('#pj-t-tim').textContent = fmtN(totalTim);
   $('#pj-t-split').textContent = 'Rp' + fmtN(byTipe.outlet) + ' / Rp' + fmtN(byTipe.event) + ' / Rp' + fmtN(byTipe.mitra) + ' / Rp' + fmtN(byTipe.pndi);
 
   /* rekap per channel/mitra */
@@ -1399,7 +1452,9 @@ function renderPenjualan(){
     const ctd = document.createElement('td'); const tag = document.createElement('span'); tag.className='chtag '+(r.chTipe==='pndi'?'mitra':r.chTipe); tag.textContent=r.chTipe; ctd.appendChild(tag); tr.appendChild(ctd);
     const dkTd = td(r.diskon>0 ? '−Rp'+fmtN(r.diskon) : '—', 'num hide-sm');
     if (r.diskonKet) { const sp=document.createElement('span'); sp.className='when'; sp.textContent=r.diskonKet; dkTd.appendChild(sp); }
-    tr.append(td(r.chNama,'hide-sm'), td(r.menuNama,'nm'), td(r.jumlah,'num'), dkTd, td('Rp'+fmtN(r.total||0),'num hide-sm'));
+    const mTd = td(r.menuNama,'nm');
+    if (r.jenis === 'tim') { const sp = document.createElement('span'); sp.className = 'when'; sp.textContent = 'Jatah Tim' + (r.pembeli ? ' · ' + r.pembeli : ''); mTd.appendChild(sp); }
+    tr.append(td(r.chNama,'hide-sm'), mTd, td(r.jumlah,'num'), dkTd, td('Rp'+fmtN(r.total||0),'num hide-sm'));
     const bTd = document.createElement('td'); bTd.className='hide-sm'; const pill=document.createElement('span'); pill.className='pill'; pill.textContent=r.bayar; bTd.appendChild(pill); tr.appendChild(bTd);
     const aTd = document.createElement('td'); const del = document.createElement('button'); del.className='mini ghost'; del.type='button'; del.textContent='Hapus';
     del.addEventListener('click', () => r._src==='pj' ? deletePenjualan(r._rawId) : deletePndiPesananFromPenjualan(r._rawId));
@@ -1424,8 +1479,8 @@ function downloadPenjualanPdf(){
   doc.setTextColor(30,30,30);
   let totalCup = 0, totalRp = 0;
   const byTipe = { outlet:0, event:0, mitra:0, pndi:0 };
-  let totalDiskon = 0;
-  rows.forEach(r => { totalCup += r.jumlah; totalRp += Number(r.total||0); totalDiskon += Number(r.diskon||0); if (byTipe[r.chTipe]!=null) byTipe[r.chTipe]+=Number(r.total||0); });
+  let totalDiskon = 0, totalTim = 0;
+  rows.forEach(r => { if (r.jenis === 'tim') totalTim += r.jumlah; totalCup += r.jumlah; totalRp += Number(r.total||0); totalDiskon += Number(r.diskon||0); if (byTipe[r.chTipe]!=null) byTipe[r.chTipe]+=Number(r.total||0); });
 
   doc.setFontSize(10);
   doc.text('Total transaksi: ' + rows.length, 14, 33);
@@ -1433,11 +1488,12 @@ function downloadPenjualanPdf(){
   doc.text('Total penjualan (setelah diskon): Rp' + fmtN(totalRp), 14, 45);
   doc.text('Outlet Rp' + fmtN(byTipe.outlet) + '  ·  Event Rp' + fmtN(byTipe.event) + '  ·  Mitra Rp' + fmtN(byTipe.mitra) + '  ·  PNDI Rp' + fmtN(byTipe.pndi), 14, 51);
   doc.text('Total diskon: Rp' + fmtN(totalDiskon), 14, 57);
+  doc.text('Jatah Tim Dopa: ' + fmtN(totalTim) + ' cup', 14, 63);
 
   doc.autoTable({
-    startY: 64,
+    startY: 70,
     head: [['Tanggal','Channel','Nama','Menu','Jml','Bayar','Diskon (Rp)','Total (Rp)']],
-    body: rows.map(r => [fmtIDShort(r.tanggal), r.chTipe, r.chNama, r.menuNama, r.jumlah, r.bayar, r.diskon>0 ? '-'+fmtN(r.diskon) : '-', fmtN(r.total||0)]),
+    body: rows.map(r => [fmtIDShort(r.tanggal), r.chTipe, r.chNama, r.menuNama + (r.jenis === 'tim' ? ' (Tim' + (r.pembeli ? ': ' + r.pembeli : '') + ')' : ''), r.jumlah, r.bayar, r.diskon>0 ? '-'+fmtN(r.diskon) : '-', fmtN(r.total||0)]),
     styles: { fontSize: 8, cellPadding: 2.5 },
     headStyles: { fillColor: navy, textColor: 255 },
     alternateRowStyles: { fillColor: [251,243,231] },
