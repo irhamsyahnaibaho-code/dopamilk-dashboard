@@ -492,6 +492,7 @@ const ST_COLOR = {'Belum dihubungi':'#B9ADA0','Sudah dihubungi':'#F5A524','Terta
 const fmtN = (n) => new Intl.NumberFormat('id-ID').format(n);
 
 const HARGA_TIM = 6000;   /* harga jatah Tim Dopa (HPP) per cup, semua menu */
+const DOPA_FAMS = ['Tania'];   /* penerima jatah yang bukan akun dashboard (Dopa fams); tambah nama baru di sini */
 
 const state = {
   gel: 'all', jenis: '', status: '', q: '',
@@ -1158,9 +1159,15 @@ function updatePjPreview(){
 async function loadTimNames(){
   try {
     const { data } = await sb.from('profiles').select('full_name,show_in_team');
+    const names = (data || []).filter(p => p.full_name && p.show_in_team !== false).map(p => p.full_name);
+    DOPA_FAMS.forEach(n => { if (!names.some(x => x.toLowerCase() === n.toLowerCase())) names.push(n); });
     const dl = $('#pj-tim-list'); dl.innerHTML = '';
-    (data || []).filter(p => p.full_name && p.show_in_team !== false).forEach(p => { const o = document.createElement('option'); o.value = p.full_name; dl.appendChild(o); });
-  } catch (e) { /* daftar saran saja; boleh ketik manual */ }
+    names.forEach(n => { const o = document.createElement('option'); o.value = n; dl.appendChild(o); });
+  } catch (e) {
+    /* daftar saran saja; boleh ketik manual */
+    const dl = $('#pj-tim-list'); dl.innerHTML = '';
+    DOPA_FAMS.forEach(n => { const o = document.createElement('option'); o.value = n; dl.appendChild(o); });
+  }
 }
 
 async function initPenjualan(){
